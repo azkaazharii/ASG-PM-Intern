@@ -1,0 +1,1031 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Data Pemesan - Komposisi Pajak & Kepemilikan Unit</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f9fafb;color:#374151;font-family:Arial,Helvetica,sans-serif;font-size:14px}
+button,input,select,textarea{font:inherit}button{cursor:pointer}
+.wrap{max-width:1500px;margin:auto;padding:0 24px 90px 24px}
+.stepper{height:72px;display:flex;align-items:center;justify-content:center;gap:16px}.step{display:flex;align-items:center;gap:8px;color:#9ca3af}.step.active{color:#2563eb;font-weight:600}.dot{width:16px;height:16px;border:3px solid #d1d5db;border-radius:50%;background:#fff}.active .dot{border-color:#2563eb}
+.line{width:96px;height:1px;background:#d1d5db}
+
+/* Layout Side-by-Side dengan minmax(0, 1fr) untuk mencegah dorongan horizontal */
+.split-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 440px;
+    gap: 20px;
+    align-items: start;
+}
+.form-pane {
+    min-width: 0;
+}
+.preview-pane {
+    position: sticky;
+    top: 20px;
+    display: flex;
+    flex-direction: column;
+}
+.preview-header {
+    height: 34px;
+    padding-bottom: 6px;
+    display: flex;
+    align-items: center;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: #64748b;
+    letter-spacing: 0.05em;
+    transition: margin-top 0.15s ease;
+}
+
+/* Container Tab dengan Efek Gradient Fade di Kanan */
+.tabs-wrapper {
+    position: relative;
+    max-width: 100%;
+}
+.tabs-wrapper::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 48px;
+    height: 34px;
+    background: linear-gradient(to right, rgba(249, 250, 251, 0), #f9fafb);
+    pointer-events: none;
+    z-index: 2;
+}
+
+.tabs {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    overflow-x: auto;
+    max-width: 100%;
+    white-space: nowrap;
+    padding-bottom: 6px;
+    user-select: none;
+    cursor: grab;
+}
+.tabs:active {
+    cursor: grabbing;
+}
+.tabs::-webkit-scrollbar { height: 5px; }
+.tabs::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 3px; }
+.tabs::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+.tabs::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+.tab{height:34px;padding:0 12px;font-size:12px;border:1px solid #e5e7eb;border-bottom:0;border-radius:6px 6px 0 0;background:#fff;color:#6b7280;text-transform:uppercase;flex:none}
+.tab.active{background:#eff6ff;border-color:#dbeafe;color:#2563eb;font-weight:600}
+.tab .x{margin-left:6px;color:#9ca3af}
+
+.panel{background:#fff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;margin-top:12px}
+.panel-head{width:100%;display:flex;align-items:center;gap:16px;padding:16px 20px;border:0;text-align:left;background:#f9fafb;color:#1f2937}
+.panel-head.closed{background:#fff}
+.num{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#dbeafe;color:#2563eb;font-weight:600;font-size:12px;flex:none}
+.panel-head.open .num{background:#2563eb;color:#fff}
+.panel-title{flex:1;font-weight:600}
+.body{padding:24px 20px}
+
+input[type="checkbox"], input[type="radio"] { accent-color: #2563eb; }
+
+/* Menghilangkan tombol panah (spinner) pada input number */
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; }
+
+/* 4 Kolom dengan lebar pas dan aman dari tabrakan teks */
+.grid-layout {
+    display: grid;
+    grid-template-columns: 1fr 140px 120px 110px;
+    gap: 12px;
+    align-items: center;
+}
+
+.grid-header {
+    display: grid;
+    grid-template-columns: 1fr 140px 120px 110px;
+    gap: 12px;
+    align-items: flex-start;
+    font-size: 11px;
+    font-weight: bold;
+    color: #475569;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    padding: 0 12px;
+    letter-spacing: 0.05em;
+}
+
+.header-sub {
+    font-size: 10px;
+    font-weight: normal;
+    color: #94a3b8;
+    text-transform: none;
+    margin-top: 4px;
+    letter-spacing: normal;
+    line-height: 1.3;
+}
+
+@keyframes softPulse {
+    0% { background-color: #dbeafe; border-color: #3b82f6; }
+    100% { background-color: #fff; border-color: #cbd5e1; }
+}
+
+.sort-item {
+    padding: 12px;
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    will-change: transform;
+    transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s;
+}
+.sort-item.just-moved { animation: softPulse 1s ease-out; }
+.sort-item.dragging { opacity: 0.4; border: 2px dashed #2563eb; background: #eff6ff; }
+.sort-item.drag-over { border-color: #2563eb; background: #f0f9ff; box-shadow: 0 4px 12px rgba(37,99,235,0.15); }
+.sort-item[draggable="true"] { cursor: grab; }
+.sort-item[draggable="true"]:active { cursor: grabbing; }
+.sort-item[draggable="true"]:hover { border-color: #93c5fd; background: #f8fafc; box-shadow: 0 2px 4px rgba(37,99,235,0.04); }
+
+.disabled-row {background: #f8fafc !important; color: #94a3b8; cursor: default;}
+.disabled-row .sort-name {color: #94a3b8;}
+.sort-name{font-weight:bold;text-transform:uppercase;color:#1e293b;display:flex;align-items:center;gap:8px}
+
+.compact-check {display: flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer; white-space: nowrap; font-weight: 500;}
+
+.percent{display:flex;width:100%;height:36px;border:1px solid #cbd5e1;border-radius:6px;overflow:hidden;background:#fff}
+.percent input{width:100%;border:0;outline:0;padding:0 6px;font-weight:600;text-align:right}
+.percent span{width:26px;display:flex;align-items:center;justify-content:center;border-left:1px solid #cbd5e1;color:#2563eb;font-weight:600;background:#f8fafc}
+
+.sorter{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px}
+.empty{text-align:center;color:#9ca3af;border:1px dashed #cbd5e1;padding:16px;border-radius:6px;background:#fff}
+
+.form-panel{margin-top:12px}
+.row{display:flex;flex-direction:column;gap:20px;margin-bottom:16px}
+.row:last-child{margin-bottom:0}
+.label{width:224px;flex:none;padding-top:8px;font-weight:500;color:#475569}
+.inputs{display:grid;grid-template-columns:1fr 1fr;gap:20px;flex:1}
+.input, .select, textarea{height:40px;width:100%;border:1px solid #cbd5e1;border-radius:6px;padding:0 12px;outline:0;background:#fff;color:#374151;text-transform:uppercase;}
+.input:focus, .select:focus, textarea:focus{border-color:#2563eb;box-shadow:0 0 0 1px #2563eb}
+.input:disabled, textarea:disabled, select:disabled { background: #f1f5f9; color: #64748b; cursor: not-allowed; }
+
+.input::placeholder, textarea::placeholder { color: #C5C5C5; text-transform: none; }
+textarea{height:80px;padding:10px 12px;resize:vertical}
+.select{appearance:none;background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");background-repeat:no-repeat;background-position:right 12px center;background-size:16px}
+.select.unselected { color: #C5C5C5; }
+.select option { color: #374151; }
+.select option[value=""][disabled] { color: #C5C5C5; }
+
+.phone-input{display:flex;border:1px solid #cbd5e1;border-radius:6px;overflow:hidden;background:#fff;height:40px;align-items:center}
+.phone-input.disabled { background: #f1f5f9; }
+.phone-prefix{display:flex;align-items:center;gap:6px;padding:0 12px;background:#f8fafc;border-right:1px solid #cbd5e1;font-size:13px;font-weight:600;color:#374151;height:100%}
+.phone-prefix img{width:20px;height:14px;object-fit:cover;border-radius:2px}
+.phone-input input{border:0;outline:0;height:100%;padding:0 12px;width:100%;color:#374151;text-transform:uppercase;background:transparent;}
+.phone-input input::placeholder { color: #C5C5C5; text-transform: none; }
+.copy-btn{background:transparent;border:0;padding:0 10px;color:#9ca3af;cursor:pointer;display:flex;align-items:center;height:100%}
+.copy-btn:hover{color:#4b5563}
+
+.radio-group{display:flex;gap:20px;align-items:center;height:40px}
+.radio-label{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;font-weight:500}
+
+/* Custom Searchable Sales Dropdown (Fixed Position Overlay) */
+.custom-dropdown { position: relative; width: 100%; }
+.dropdown-trigger { height: 40px; width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0 12px; background: #fff; color: #374151; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+.dropdown-trigger.unselected { color: #C5C5C5; }
+.dropdown-menu { position: fixed; background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15); z-index: 9999; padding: 12px; }
+.dropdown-search { width: 100%; height: 38px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0 12px 0 32px; outline: 0; margin-bottom: 8px; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3ccircle cx='11' cy='11' r='8'></circle><line x1='21' y1='21' x2='16.65' y2='16.65'></line></svg>"); background-repeat: no-repeat; background-position: 10px center; background-size: 16px; }
+.dropdown-list { max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+.dropdown-item { padding: 10px 12px; border-radius: 4px; cursor: pointer; display: flex; flex-direction: column; gap: 2px; }
+.dropdown-item:hover { background: #f1f5f9; }
+.dropdown-item-name { font-weight: bold; font-size: 13px; color: #1e293b; }
+.dropdown-item-sub { font-size: 11px; color: #64748b; }
+
+.preview{background:#fff;border:1px solid #cbd5e1;padding:24px;box-shadow:0 4px 16px rgba(0,0,0,.06);border-radius:8px}
+.preview hr{border:0;border-top:1px solid #111827;margin:16px 0}
+.preview h4{font-size:13px;margin:0 0 8px}
+.p-row{display:flex;gap:12px;font-size:13px}
+.p-label{width:110px;flex:none}
+.p-value{font-weight:600}
+
+.bottom{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #e2e8f0;z-index:10;box-shadow:0 -4px 6px -1px rgba(0,0,0,0.05)}
+.bottom-inner{max-width:1500px;margin:auto;padding:12px 24px;display:flex;justify-content:space-between;align-items:center}
+.btn{border:1px solid #cbd5e1;border-radius:6px;padding:8px 18px;background:#fff;color:#374151;font-weight:600;transition:all 0.2s}
+.btn:hover{background:#f8fafc}
+.btn.primary{background:#2563eb;color:#fff;border-color:#2563eb}
+.btn.primary:hover{background:#1d4ed8}
+.actions{display:flex;gap:12px}
+
+/* Toast Stack Container Styling (Pojok Bawah Kanan) */
+@keyframes slideUpFade {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+.toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 10px;
+    z-index: 9999;
+    pointer-events: none;
+}
+.toast-notification {
+    background: #ef4444;
+    color: #fff;
+    padding: 14px 20px;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    font-weight: 500;
+    max-width: 380px;
+    pointer-events: auto;
+    animation: slideUpFade 0.25s ease-out;
+}
+
+/* Modal Konfirmasi Hapus Styling */
+.modal-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000;
+}
+.modal-box {
+    background: #fff; width: 440px; border-radius: 12px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    padding: 32px 24px 24px 24px; position: relative; text-align: center;
+}
+.modal-close {
+    position: absolute; top: 16px; right: 16px;
+    background: transparent; border: 0; font-size: 18px; color: #9ca3af; cursor: pointer;
+}
+.modal-close:hover { color: #4b5563; }
+.modal-icon-container {
+    width: 140px; height: 140px; margin: 0 auto 16px auto;
+    background: #f0fdf4; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; position: relative;
+}
+.modal-text {
+    font-size: 15px; font-weight: 500; color: #1f2937; margin-bottom: 24px; line-height: 1.5;
+}
+.modal-actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.btn-modal-cancel { background: #fff; border: 1px solid #d1d5db; color: #374151; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+.btn-modal-cancel:hover { background: #f9fafb; }
+.btn-modal-danger { background: #ef4444; border: 1px solid #ef4444; color: #fff; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+.btn-modal-danger:hover { background: #dc2626; }
+
+@media(max-width:1100px){.split-layout{grid-template-columns:1fr}.preview-pane{position:static}}
+@media(min-width:768px){.section-row,.row{flex-direction:row}.label{width:224px}.inputs{grid-template-columns:1fr 1fr}}
+@media(max-width:750px){.inputs{grid-template-columns:1fr}.line{width:40px}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const app=document.getElementById('app');
+let pemesans=[makePemesan(1)];
+let active=pemesans[0].id;
+let order=[], representative=null, lastMovedId=null;
+let deleteTargetId = null;
+let toastMessages = [];
+let toastTimer = null;
+
+let genAcc = { 1: false, 2: false, 3: false };
+let generalData = {
+    salesName: 'AAN RIDUWAN',
+    salesRole: 'REFERENTOR',
+    salesEmail: 'AAN@EMAIL.COM',
+    productInfo: 'BROSUR/FLYER',
+    salesSearchQuery: '',
+    salesDropdownOpen: false,
+    dropdownCoords: { top: 0, left: 0, width: 0 },
+    resvMode: 'tidak',
+    resvFirst: '', resvLast: '', resvRelation: 'NONE',
+    resvPhone1: '', resvPhone2: '', resvTel: '', resvEmail: '',
+    resvAddrType: 'RUMAH', resvCountry: 'INDONESIA',
+    resvProv: '', resvKota: '', resvKec: '', resvKel: '', resvPostal: '', resvAddress: ''
+};
+
+const salesList = [
+    { name: "AAN RIDUWAN", role: "REFERENTOR", email: "AAN@EMAIL.COM" },
+    { name: "AARON LINARTHA LAU (BLESS REALTY)", role: "AGENT", email: "AARON@EMAIL.COM" },
+    { name: "AAT DAM ATI", role: "IN HOUSE", email: "AAT@EMAIL.COM" },
+    { name: "ABDUL MUAZ PANE (PROPERTY PRO BANDUNG)", role: "IN HOUSE", email: "ABDUL@EMAIL.COM" }
+];
+
+let accordions = {};
+function getAcc(pId) {
+    if(!accordions[pId]) {
+        accordions[pId] = {1: false, 2: false, 3: false, 4: false, 5: false};
+    }
+    return accordions[pId];
+}
+
+function makePemesan(n){
+    return {
+        id:'p-'+n+'-'+Math.random().toString(36).slice(2,7),
+        firstName:'', lastName:'', phone:'', phoneOpt:'', phoneTel:'', email:'',
+        addrType:'RUMAH', country:'INDONESIA', prov:'', kota:'', kec:'', kel:'', postal:'', address:'',
+        idType:'NONE',
+        job:'', sourceFund:'', income:'<25.000.000', paymentInst:'TUNAI', purpose:'', thirdParty:false,
+        npwp:'', nitku:'', npwpName:'', npwpAddr:'',
+        taxPercent:0, isOwner:false
+    }
+}
+
+function name(p){return (p.firstName+' '+p.lastName).trim().toUpperCase()}
+function ordered(){
+    let ns = pemesans;
+    let by = new Map(ns.map(p=>[p.id,p]));
+    let seq = order.filter(id=>by.has(id));
+    let rest = ns.filter(p=>!seq.includes(p.id)).map(p=>p.id);
+    return [...seq,...rest].map(id=>by.get(id));
+}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function joinNames(a){return a.length===0?'-':a.length===1?a[0]:a.slice(0,-1).join(', ')+' & '+a[a.length-1]}
+
+function setupDragScroll() {
+    const tabsContainer = document.querySelector('.tabs');
+    if (!tabsContainer) return;
+    let isDown = false, startX, scrollLeft;
+    tabsContainer.addEventListener('mousedown', (e) => {
+        isDown = true; tabsContainer.classList.add('active');
+        startX = e.pageX - tabsContainer.offsetLeft; scrollLeft = tabsContainer.scrollLeft;
+    });
+    tabsContainer.addEventListener('mouseleave', () => { isDown = false; });
+    tabsContainer.addEventListener('mouseup', () => { isDown = false; });
+    tabsContainer.addEventListener('mousemove', (e) => {
+        if(!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - tabsContainer.offsetLeft;
+        tabsContainer.scrollLeft = scrollLeft - (x - startX) * 1.5;
+    });
+}
+
+document.addEventListener('input', function(e) {
+    if (e.target && (e.target.matches('input[type="text"], textarea'))) {
+        if (e.target.id === 'sales-search') {
+            generalData.salesSearchQuery = e.target.value;
+            render();
+            setTimeout(() => {
+                let el = document.getElementById('sales-search');
+                if(el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+            }, 0);
+            return;
+        }
+        let start = e.target.selectionStart;
+        e.target.value = e.target.value.toUpperCase();
+        e.target.setSelectionRange(start, start);
+    }
+});
+
+document.addEventListener('click', function(e) {
+    if(generalData.salesDropdownOpen && !e.target.closest('.custom-dropdown') && !e.target.closest('.dropdown-menu')) {
+        generalData.salesDropdownOpen = false;
+        generalData.salesSearchQuery = '';
+        render();
+    }
+});
+
+function showToasts(msgs) {
+    toastMessages = msgs;
+    render();
+    if(toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+        toastMessages = [];
+        render();
+    }, 5000);
+}
+
+function handleNext() {
+    let errors = [];
+    let owners = pemesans.filter(p => p.isOwner);
+    
+    if (owners.length === 0) {
+        errors.push("Harus ada minimal 1 Pemilik unit yang dicentang.");
+    }
+    if (!representative) {
+        errors.push("Perwakilan FPU (Data Pemesan Utama) belum dipilih.");
+    }
+    let totalTax = pemesans.reduce((sum, p) => sum + (Number(p.taxPercent) || 0), 0);
+    if (totalTax !== 100) {
+        errors.push(`Total persentase pajak harus tepat 100% (saat ini ${totalTax}%).`);
+    }
+
+    if (errors.length > 0) {
+        showToasts(errors);
+        return;
+    }
+
+    alert("Validasi berhasil! Melanjutkan ke tahap berikutnya...");
+}
+
+function render(){
+    if(generalData.resvMode !== 'tidak') {
+        let pCheck = pemesans.find(x => x.id === generalData.resvMode);
+        if(!pCheck || !name(pCheck)) {
+            generalData.resvMode = 'tidak';
+        }
+    }
+
+    let oldTabsScroll = 0;
+    let existingTabs = document.querySelector('.tabs');
+    if (existingTabs) { oldTabsScroll = existingTabs.scrollLeft; }
+
+    const oldRects = new Map();
+    document.querySelectorAll('.sort-item').forEach(el => {
+        oldRects.set(el.dataset.id, el.getBoundingClientRect());
+    });
+
+    let activeId = document.activeElement ? document.activeElement.id : null;
+    let selStart = null;
+    if (activeId && document.activeElement.tagName === 'INPUT') {
+        selStart = document.activeElement.selectionStart;
+    }
+
+    let tabs=pemesans.map((p,i)=>{
+        let tabName = (i+1)+'. '+(name(p)||'PEMESAN '+(i+1));
+        return `<button id="tab-btn-${p.id}" class="tab ${active===p.id?'active':''}" onclick="setActive('${p.id}')">${esc(tabName)}${i>0?`<span class="x" onclick="event.stopPropagation();promptRemove('${p.id}')">×</span>`:''}</button>`;
+    }).join('');
+    tabs+=`<button class="tab" onclick="addPemesan()">＋ PEMESAN</button><button class="tab ${active==='umum'?'active':''}" onclick="setActive('umum')">INFORMASI UMUM</button>`;
+
+    let formContent = (active==='umum' ? general() : pemesanPanel(pemesans.find(p=>p.id===active)));
+    
+    let filteredSales = salesList.filter(s => s.name.includes(generalData.salesSearchQuery.toUpperCase()));
+    let dropdownMenuHtml = generalData.salesDropdownOpen ? `
+    <div class="dropdown-menu" style="top: ${generalData.dropdownCoords.top}px; left: ${generalData.dropdownCoords.left}px; width: ${generalData.dropdownCoords.width}px;">
+        <input id="sales-search" class="dropdown-search" placeholder="Cari data..." value="${esc(generalData.salesSearchQuery)}">
+        <div class="dropdown-list">
+            ${filteredSales.length ? filteredSales.map(s => `
+                <div class="dropdown-item" onclick="selectSales('${esc(s.name)}', '${esc(s.role)}', '${esc(s.email)}')">
+                    <div class="dropdown-item-name">${esc(s.name)}</div>
+                    <div class="dropdown-item-sub">${esc(s.role)} | ${esc(s.email)}</div>
+                </div>
+            `).join('') : '<div style="padding:8px;color:#9ca3af;text-align:center;font-size:12px">Tidak ada data ditemukan</div>'}
+        </div>
+    </div>` : '';
+
+    let modalHtml = deleteTargetId ? `
+    <div class="modal-overlay">
+        <div class="modal-box">
+            <button class="modal-close" onclick="closeModal()">✕</button>
+            <div class="modal-icon-container">
+                <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                    <line x1="9" y1="10" x2="15" y2="10"></line>
+                    <line x1="9" y1="14" x2="13" y2="14"></line>
+                </svg>
+                <div style="position: absolute; bottom: 20px; right: 25px; background: #ef4444; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: bold; font-size: 12px; border: 2px solid #fff;">✕</div>
+            </div>
+            <div class="modal-text">Apakah kamu yakin ingin menghapus data pemesan ini?</div>
+            <div class="modal-actions-grid">
+                <button class="btn-modal-cancel" onclick="closeModal()">Batal</button>
+                <button class="btn-modal-danger" onclick="executeRemove()">Ya</button>
+            </div>
+        </div>
+    </div>` : '';
+
+    let toastHtml = toastMessages.length ? `
+    <div class="toast-container">
+        ${toastMessages.map(msg => `
+            <div class="toast-notification">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                <span>${esc(msg)}</span>
+            </div>
+        `).join('')}
+    </div>` : '';
+
+    let previewHeaderMargin = (active === 'umum') ? '0px' : '12px';
+
+    app.innerHTML=`<main><div class="stepper"><div class="step active"><span class="dot"></span>Data Pemesan</div><span class="line"></span><div class="step"><span class="dot"></span>Pilih Unit</div><span class="line"></span><div class="step"><span class="dot"></span>Pembayaran</div></div><div class="wrap"><div class="split-layout"><div class="form-pane"><div class="tabs-wrapper"><div class="tabs">${tabs}</div></div>${formContent}</div><div class="preview-pane"><div class="preview-header" style="margin-top: ${previewHeaderMargin}">Live Preview Dokumen</div>${previewHtml()}</div></div></div>${dropdownMenuHtml}</main><div class="bottom"><div class="bottom-inner"><button class="btn">Batal</button><div class="actions"><button class="btn primary" onclick="handleNext()">Selanjutnya</button></div></div></div>${modalHtml}${toastHtml}`;
+
+    setupDragScroll();
+
+    let newTabs = document.querySelector('.tabs');
+    if (newTabs) { newTabs.scrollLeft = oldTabsScroll; }
+
+    if (activeId && activeId !== 'sales-search') {
+        let el = document.getElementById(activeId);
+        if (el) {
+            el.focus();
+            if (selStart !== null && el.type === 'text') {
+                try { el.setSelectionRange(selStart, selStart); } catch(e){}
+            }
+        }
+    }
+
+    document.querySelectorAll('.sort-item').forEach(el => {
+        const id = el.dataset.id;
+        if (oldRects.has(id)) {
+            const oldRect = oldRects.get(id);
+            const newRect = el.getBoundingClientRect();
+            const dx = oldRect.left - newRect.left;
+            const dy = oldRect.top - newRect.top;
+
+            if (dx !== 0 || dy !== 0) {
+                el.style.transform = `translate(${dx}px, ${dy}px)`;
+                el.style.transition = 'none';
+                requestAnimationFrame(() => {
+                    el.style.transform = '';
+                    el.style.transition = 'transform 0.35s cubic-bezier(0.2, 0, 0, 1)';
+                });
+            }
+        }
+    });
+}
+
+function general(){
+let allItems = ordered();
+let owners = allItems.filter(p => p.isOwner);
+let nonOwners = allItems.filter(p => !p.isOwner);
+let items = [...owners, ...nonOwners];
+
+let gridRows = items.length ? items.map((p) => {
+    let isOwner = p.isOwner;
+    let isJustMoved = (p.id === lastMovedId) ? 'just-moved' : '';
+    let ownerNum = isOwner ? (owners.indexOf(p) + 1) : '';
+    
+    return `
+    <div class="sort-item grid-layout ${isOwner?'':'disabled-row'} ${isJustMoved}" data-id="${p.id}" ${isOwner?`draggable="true" ondragstart="onDragStart(event, '${p.id}')" ondragend="onDragEnd(event)" ondragenter="onDragEnter(event, '${p.id}')" ondragleave="onDragLeave(event)" ondragover="event.preventDefault()" ondrop="drop(event, '${p.id}')"`:''} title="${isOwner ? 'Tahan dan geser baris untuk mengubah urutan' : 'Ubah status menjadi Pemilik untuk mengaktifkan pengurutan'}">
+        <span class="sort-name">
+            <span style="color:#9ca3af; font-size:12px; letter-spacing:-1px; ${isOwner?'cursor:grab;':'visibility:hidden;'}">⋮⋮</span>
+            <span style="color:#64748b; font-weight:600; min-width:18px;">${ownerNum}</span>
+            <span>${esc(name(p)) || '-'}</span>
+        </span>
+        <div><label class="compact-check"><input id="own_${p.id}" type="checkbox" ${isOwner?'checked':''} onchange="owner('${p.id}',this.checked)"> Pemilik</label></div>
+        <div>
+            <div class="percent">
+                <input id="tax_${p.id}" type="number" min="0" max="100" value="${p.taxPercent||''}" placeholder="0" onchange="tax('${p.id}',this.value)">
+                <span>%</span>
+            </div>
+        </div>
+        <div><label class="compact-check"><input id="rep_${p.id}" type="radio" name="rep" ${representative===p.id?'checked':''} ${isOwner?'':'disabled'} onchange="rep('${p.id}')"> FPU</label></div>
+    </div>`;
+}).join('') : '<div class="empty">Belum ada data pemesan. Tambahkan data melalui tab pemesan di sebelah kiri.</div>';
+
+let salesDropdownHtml = `
+<div class="custom-dropdown">
+    <div class="dropdown-trigger ${!generalData.salesName?'unselected':''}" onclick="toggleSalesDropdown(event)">
+        <span>${esc(generalData.salesName) || 'NAMA SALES'}</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+    </div>
+</div>`;
+
+let resvModeRadios = pemesans.map((p) => {
+    let pName = name(p);
+    if (!pName) return '';
+    return `<label class="radio-label"><input type="radio" name="resv_mode" ${generalData.resvMode === p.id ? 'checked' : ''} onclick="setResvMode('${p.id}')"> ${esc(pName)}</label>`;
+}).filter(Boolean).join('');
+
+let isDisabled = (generalData.resvMode !== 'tidak');
+let rFirst = generalData.resvFirst, rLast = generalData.resvLast, rPhone1 = generalData.resvPhone1, rPhone2 = generalData.resvPhone2, rTel = generalData.resvTel, rEmail = generalData.resvEmail, rProv = generalData.resvProv, rKota = generalData.resvKota, rKec = generalData.resvKec, rKel = generalData.resvKel, rPostal = generalData.resvPostal, rAddress = generalData.resvAddress;
+
+if(isDisabled) {
+    let pObj = pemesans.find(x => x.id === generalData.resvMode);
+    if(pObj) {
+        rFirst = pObj.firstName;
+        rLast = pObj.lastName;
+        rPhone1 = pObj.phone;
+        rPhone2 = pObj.phoneOpt;
+        rTel = pObj.phoneTel;
+        rEmail = pObj.email;
+        rProv = pObj.prov;
+        rKota = pObj.kota;
+        rKec = pObj.kec;
+        rKel = pObj.kel;
+        rPostal = pObj.postal;
+        rAddress = pObj.address;
+    }
+}
+
+return `
+<div class="panel" style="margin-top:0">
+    <button class="panel-head ${genAcc[1]?'open':'closed'}" onclick="genAcc[1]=!genAcc[1];render()">
+        <span class="num">1</span><span class="panel-title">Informasi Sales</span><span>${genAcc[1]?'⌃':'⌄'}</span>
+    </button>
+    ${genAcc[1]?`<div class="body">
+        <div class="row"><div class="label">Nama Sales*</div><div class="inputs">${salesDropdownHtml}</div></div>
+        <div class="row"><div class="label">Informasi Produk*</div><div class="inputs">
+            <select class="select ${!generalData.productInfo?'unselected':''}" onchange="this.classList.remove('unselected');generalData.productInfo=this.value;render()">
+                <option value="" disabled ${!generalData.productInfo?'selected':''}>Informasi Produk</option>
+                <option value="BROSUR/FLYER" ${generalData.productInfo==='BROSUR/FLYER'?'selected':''}>BROSUR/FLYER</option>
+                <option value="PAMERAN" ${generalData.productInfo==='PAMERAN'?'selected':''}>PAMERAN</option>
+                <option value="REFERENSI" ${generalData.productInfo==='REFERENSI'?'selected':''}>REFERENSI</option>
+                <option value="REPEAT ORDER" ${generalData.productInfo==='REPEAT ORDER'?'selected':''}>REPEAT ORDER</option>
+            </select>
+        </div></div>
+    </div>`:''}
+</div>
+
+<div class="panel">
+    <button class="panel-head ${genAcc[2]?'open':'closed'}" onclick="genAcc[2]=!genAcc[2];render()">
+        <span class="num">2</span><span class="panel-title">Kontak Reservasi</span><span>${genAcc[2]?'⌃':'⌄'}</span>
+    </button>
+    ${genAcc[2]?`<div class="body">
+        <div class="row"><div class="label">Pilih dari data pemesan</div><div class="inputs" style="grid-template-columns:1fr; gap:10px;">
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                ${resvModeRadios}
+                <label class="radio-label"><input type="radio" name="resv_mode" ${generalData.resvMode==='tidak'?'checked':''} onclick="setResvMode('tidak')"> TIDAK SAMA DENGAN DATA PEMESAN</label>
+            </div>
+        </div></div>
+        <div class="row"><div class="label">Nama</div><div class="inputs">
+            <input class="input" value="${esc(rFirst)}" placeholder="Nama Depan" ${isDisabled?'disabled':''} oninput="generalData.resvFirst=this.value">
+            <input class="input" value="${esc(rLast)}" placeholder="Nama Belakang" ${isDisabled?'disabled':''} oninput="generalData.resvLast=this.value">
+        </div></div>
+        <div class="row"><div class="label">Hubungan dengan pemesan</div><div class="inputs">
+            <select class="select" ${isDisabled?'disabled':''} onchange="generalData.resvRelation=this.value">
+                <option value="NONE" ${generalData.resvRelation==='NONE'?'selected':''}>NONE</option>
+                <option value="KELUARGA" ${generalData.resvRelation==='KELUARGA'?'selected':''}>KELUARGA</option>
+                <option value="REKAN" ${generalData.resvRelation==='REKAN'?'selected':''}>REKAN</option>
+            </select>
+        </div></div>
+        <div class="row"><div class="label">Nomor Hp</div><div class="inputs">
+            <div class="phone-input ${isDisabled?'disabled':''}">
+                <div class="phone-prefix"><img src="https://flagcdn.com/w20/id.png"> +62</div>
+                <input class="input" style="border:0" value="${esc(rPhone1)}" placeholder="Nomor HP*" ${isDisabled?'disabled':''} oninput="generalData.resvPhone1=this.value">
+                <button class="copy-btn" title="Salin" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
+            </div>
+            <div class="phone-input ${isDisabled?'disabled':''}">
+                <div class="phone-prefix"><img src="https://flagcdn.com/w20/id.png"> +62</div>
+                <input class="input" style="border:0" value="${esc(rPhone2)}" placeholder="Nomor HP (Opsional)" ${isDisabled?'disabled':''} oninput="generalData.resvPhone2=this.value">
+                <button class="copy-btn" title="Salin" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
+            </div>
+        </div></div>
+        <div class="row"><div class="label">Nomor telepon</div><div class="inputs">
+            <div class="phone-input ${isDisabled?'disabled':''}">
+                <div class="phone-prefix"><img src="https://flagcdn.com/w20/id.png"> +62</div>
+                <input class="input" style="border:0" value="${esc(rTel)}" placeholder="Nomor telepon (Opsional)" ${isDisabled?'disabled':''} oninput="generalData.resvTel=this.value">
+                <button class="copy-btn" title="Salin" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
+            </div>
+        </div></div>
+        <div class="row"><div class="label">Email*</div><div class="inputs">
+            <input class="input" value="${esc(rEmail)}" placeholder="Email" ${isDisabled?'disabled':''} oninput="generalData.resvEmail=this.value">
+        </div></div>
+        <div class="row"><div class="label">Alamat surat menyurat</div><div class="inputs" style="grid-template-columns:1fr">
+            <div class="radio-group">
+                <label class="radio-label"><input type="radio" name="resv_addr" ${generalData.resvAddrType==='RUMAH'?'checked':''} ${isDisabled?'disabled':''} onclick="generalData.resvAddrType='RUMAH'"> RUMAH</label>
+                <label class="radio-label"><input type="radio" name="resv_addr" ${generalData.resvAddrType==='PERUSAHAAN'?'checked':''} ${isDisabled?'disabled':''} onclick="generalData.resvAddrType='PERUSAHAAN'"> PERUSAHAAN</label>
+                <label class="radio-label"><input type="radio" name="resv_addr" ${generalData.resvAddrType==='LAINNYA'?'checked':''} ${isDisabled?'disabled':''} onclick="generalData.resvAddrType='LAINNYA'"> LAINNYA</label>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+                <select class="select" ${isDisabled?'disabled':''} onchange="generalData.resvCountry=this.value"><option>INDONESIA</option></select>
+                <input class="input" placeholder="Provinsi" value="${esc(rProv)}" ${isDisabled?'disabled':''} oninput="generalData.resvProv=this.value">
+                <input class="input" placeholder="Kota" value="${esc(rKota)}" ${isDisabled?'disabled':''} oninput="generalData.resvKota=this.value">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+                <input class="input" placeholder="Kecamatan" value="${esc(rKec)}" ${isDisabled?'disabled':''} oninput="generalData.resvKec=this.value">
+                <input class="input" placeholder="Kelurahan" value="${esc(rKel)}" ${isDisabled?'disabled':''} oninput="generalData.resvKel=this.value">
+                <input class="input" placeholder="Kode Pos" value="${esc(rPostal)}" ${isDisabled?'disabled':''} oninput="generalData.resvPostal=this.value">
+            </div>
+            <textarea placeholder="Alamat" ${isDisabled?'disabled':''} oninput="generalData.resvAddress=this.value">${esc(rAddress)}</textarea>
+        </div></div>
+    </div>`:''}
+</div>
+
+<div class="panel">
+    <button class="panel-head ${genAcc[3]?'open':'closed'}" onclick="genAcc[3]=!genAcc[3];render()">
+        <span class="num">3</span><span class="panel-title">Komposisi Pajak dan Kepemilikan Unit</span><span>${genAcc[3]?'⌃':'⌄'}</span>
+    </button>
+    ${genAcc[3]?`<div class="body">
+        <div class="sorter">
+            <div class="grid-header">
+                <div>Nama Konsumen<div class="header-sub">Otomatis dari tab pemesan</div></div>
+                <div>Status Kepemilikan<div class="header-sub">Tentukan pemegang hak unit</div></div>
+                <div>Porsi Pajak (%)<div class="header-sub">Persentase tanggungan pajak</div></div>
+                <div>Perwakilan FPU<div class="header-sub">Data Pemesan Utama</div></div>
+            </div>
+            ${gridRows}
+            <div style="font-size: 11px; color: #64748b; margin-top: 12px; border-top: 1px dashed #cbd5e1; padding-top: 8px;">
+                Baris berstatus <b>Pemilik</b> dapat digeser untuk mengatur urutan prioritas dokumen
+            </div>
+        </div>
+    </div>`:''}
+</div>`;
+}
+
+function setResvMode(mode) {
+    generalData.resvMode = mode;
+    if (mode !== 'tidak') {
+        let pObj = pemesans.find(x => x.id === mode);
+        if (pObj) {
+            generalData.resvFirst = pObj.firstName;
+            generalData.resvLast = pObj.lastName;
+            generalData.resvPhone1 = pObj.phone;
+            generalData.resvPhone2 = pObj.phoneOpt;
+            generalData.resvTel = pObj.phoneTel || '';
+            generalData.resvEmail = pObj.email;
+            generalData.resvAddrType = pObj.addrType || 'RUMAH';
+            generalData.resvCountry = pObj.country || 'INDONESIA';
+            generalData.resvProv = pObj.prov;
+            generalData.resvKota = pObj.kota;
+            generalData.resvKec = pObj.kec;
+            generalData.resvKel = pObj.kel;
+            generalData.resvPostal = pObj.postal;
+            generalData.resvAddress = pObj.address;
+        }
+    }
+    render();
+}
+
+function toggleSalesDropdown(e) {
+    const trigger = e.currentTarget.closest('.custom-dropdown').querySelector('.dropdown-trigger');
+    const rect = trigger.getBoundingClientRect();
+    generalData.salesDropdownOpen = !generalData.salesDropdownOpen;
+    if (generalData.salesDropdownOpen) {
+        generalData.dropdownCoords = {
+            top: rect.bottom + 6,
+            left: rect.left,
+            width: rect.width
+        };
+    } else {
+        generalData.salesSearchQuery = '';
+    }
+    render();
+}
+
+function selectSales(name, role, email) {
+    generalData.salesName = name;
+    generalData.salesRole = role;
+    generalData.salesEmail = email;
+    generalData.salesDropdownOpen = false;
+    generalData.salesSearchQuery = '';
+    render();
+}
+
+function pemesanPanel(p){
+if(!p)return '';
+let acc = getAcc(p.id);
+
+const sec=(n,t,body,open)=>`
+<div class="panel form-panel">
+    <button class="panel-head ${open?'open':'closed'}" onclick="toggleAcc('${p.id}', ${n})">
+        <span class="num">${n}</span><span class="panel-title">${t}</span><span>${open?'⌃':'⌄'}</span>
+    </button>
+    ${open?`<div class="body">${body}</div>`:''}
+</div>`;
+
+let body1 = `
+    <div class="row"><div class="label">Nama</div><div class="inputs">
+        <input id="fn_${p.id}" class="input" value="${esc(p.firstName)}" placeholder="Nama Depan" oninput="updateName('${p.id}', 'firstName', this.value)">
+        <input id="ln_${p.id}" class="input" value="${esc(p.lastName)}" placeholder="Nama Belakang" oninput="updateName('${p.id}', 'lastName', this.value)">
+    </div></div>
+    <div class="row"><div class="label">Nomor Hp</div><div class="inputs">
+        <div class="phone-input">
+            <div class="phone-prefix"><img src="https://flagcdn.com/w20/id.png"> +62</div>
+            <input class="input" style="border:0" value="${esc(p.phone)}" placeholder="Nomor HP*" oninput="updateField('${p.id}','phone',this.value)">
+            <button class="copy-btn" title="Salin" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
+        </div>
+        <div class="phone-input">
+            <div class="phone-prefix"><img src="https://flagcdn.com/w20/id.png"> +62</div>
+            <input class="input" style="border:0" value="${esc(p.phoneOpt)}" placeholder="Nomor HP (Opsional)" oninput="updateField('${p.id}','phoneOpt',this.value)">
+            <button class="copy-btn" title="Salin" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
+        </div>
+    </div></div>
+    <div class="row"><div class="label">Nomor telepon</div><div class="inputs">
+        <div class="phone-input">
+            <div class="phone-prefix"><img src="https://flagcdn.com/w20/id.png"> +62</div>
+            <input class="input" style="border:0" value="${esc(p.phoneTel||'')}" placeholder="Nomor telepon (Opsional)" oninput="updateField('${p.id}','phoneTel',this.value)">
+            <button class="copy-btn" title="Salin" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
+        </div>
+    </div></div>
+    <div class="row"><div class="label">Email</div><div class="inputs">
+        <input class="input" value="${esc(p.email)}" placeholder="Email" oninput="updateField('${p.id}','email',this.value)">
+    </div></div>
+    <div class="row"><div class="label">Alamat surat menyurat</div><div class="inputs" style="grid-template-columns:1fr">
+        <div class="radio-group">
+            <label class="radio-label"><input type="radio" name="addr_${p.id}" ${p.addrType==='RUMAH'?'checked':''} onclick="updateField('${p.id}','addrType','RUMAH')"> RUMAH</label>
+            <label class="radio-label"><input type="radio" name="addr_${p.id}" ${p.addrType==='PERUSAHAAN'?'checked':''} onclick="updateField('${p.id}','addrType','PERUSAHAAN')"> PERUSAHAAN</label>
+            <label class="radio-label"><input type="radio" name="addr_${p.id}" ${p.addrType==='LAINNYA'?'checked':''} onclick="updateField('${p.id}','addrType','LAINNYA')"> LAINNYA</label>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+            <select class="select" onchange="updateField('${p.id}','country',this.value)"><option>INDONESIA</option></select>
+            <input class="input" placeholder="Provinsi" value="${esc(p.prov)}" oninput="updateField('${p.id}','prov',this.value)">
+            <input class="input" placeholder="Kota" value="${esc(p.kota)}" oninput="updateField('${p.id}','kota',this.value)">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+            <input class="input" placeholder="Kecamatan" value="${esc(p.kec)}" oninput="updateField('${p.id}','kec',this.value)">
+            <input class="input" placeholder="Kelurahan" value="${esc(p.kel)}" oninput="updateField('${p.id}','kel',this.value)">
+            <input class="input" placeholder="Kode Pos" value="${esc(p.postal)}" oninput="updateField('${p.id}','postal',this.value)">
+        </div>
+        <textarea placeholder="Alamat" oninput="updateField('${p.id}','address',this.value)">${esc(p.address)}</textarea>
+    </div></div>
+`;
+
+let body2 = `
+    <div class="row"><div class="label">Jenis Tanda Pengenal</div><div class="inputs">
+        <select class="select" onchange="updateField('${p.id}','idType',this.value)">
+            <option value="NONE" ${p.idType==='NONE'?'selected':''}>NONE</option>
+            <option value="KTP" ${p.idType==='KTP'?'selected':''}>KTP</option>
+            <option value="KIA" ${p.idType==='KIA'?'selected':''}>KIA</option>
+            <option value="PASSPORT" ${p.idType==='PASSPORT'?'selected':''}>PASSPORT</option>
+        </select>
+    </div></div>
+`;
+
+let body3 = `
+    <div class="row"><div class="label">Jenis Pekerjaan</div><div class="inputs">
+        <select class="select ${!p.job?'unselected':''}" onchange="this.classList.remove('unselected');updateField('${p.id}','job',this.value)">
+            <option value="" disabled ${!p.job?'selected':''}>Jenis Pekerjaan</option>
+            <option value="PEGAWAI SWASTA" ${p.job==='PEGAWAI SWASTA'?'selected':''}>PEGAWAI SWASTA</option>
+            <option value="PNS" ${p.job==='PNS'?'selected':''}>PNS</option>
+            <option value="PELAJAR/MAHASISWA" ${p.job==='PELAJAR/MAHASISWA'?'selected':''}>PELAJAR/MAHASISWA</option>
+            <option value="PEGAWAI BUMN" ${p.job==='PEGAWAI BUMN'?'selected':''}>PEGAWAI BUMN</option>
+        </select>
+    </div></div>
+    <div class="row"><div class="label">Sumber Dana</div><div class="inputs">
+        <select class="select ${!p.sourceFund?'unselected':''}" onchange="this.classList.remove('unselected');updateField('${p.id}','sourceFund',this.value)">
+            <option value="" disabled ${!p.sourceFund?'selected':''}>Sumber Dana</option>
+            <option value="NONE" ${p.sourceFund==='NONE'?'selected':''}>NONE</option>
+            <option value="GAJI" ${p.sourceFund==='GAJI'?'selected':''}>GAJI</option>
+            <option value="USAHA/BISNIS" ${p.sourceFund==='USAHA/BISNIS'?'selected':''}>USAHA/BISNIS</option>
+            <option value="WARISAN" ${p.sourceFund==='WARISAN'?'selected':''}>WARISAN</option>
+            <option value="LAINNYA" ${p.sourceFund==='LAINNYA'?'selected':''}>LAINNYA</option>
+        </select>
+    </div></div>
+    <div class="row"><div class="label">Jumlah Pendapatan (Bulanan)</div><div class="inputs" style="grid-template-columns:1fr">
+        <div class="radio-group" style="flex-wrap:wrap;gap:24px">
+            <label class="radio-label"><input type="radio" name="inc_${p.id}" ${p.income==='<25.000.000'?'checked':''} onclick="updateField('${p.id}','income','<25.000.000')"> &lt;25.000.000</label>
+            <label class="radio-label"><input type="radio" name="inc_${p.id}" ${p.income==='25.000.000 - 50.000.000'?'checked':''} onclick="updateField('${p.id}','income','25.000.000 - 50.000.000')"> 25.000.000 - 50.000.000</label>
+            <label class="radio-label"><input type="radio" name="inc_${p.id}" ${p.income==='50.000.001 - 100.000.000'?'checked':''} onclick="updateField('${p.id}','income','50.000.001 - 100.000.000')"> 50.000.001 - 100.000.000</label>
+            <label class="radio-label"><input type="radio" name="inc_${p.id}" ${p.income==='>100.000.000'?'checked':''} onclick="updateField('${p.id}','income','>100.000.000')"> &gt;100.000.000</label>
+            <label class="radio-label"><input type="radio" name="inc_${p.id}" ${p.income==='NONE'?'checked':''} onclick="updateField('${p.id}','income','NONE')"> NONE</label>
+        </div>
+    </div></div>
+    <div class="row"><div class="label">Instrumen Pembayaran</div><div class="inputs" style="grid-template-columns:1fr">
+        <div style="display:flex;flex-direction:column;gap:10px">
+            <label class="radio-label"><input type="radio" name="pay_${p.id}" ${p.paymentInst==='TUNAI'?'checked':''} onclick="updateField('${p.id}','paymentInst','TUNAI')"> TUNAI</label>
+            <label class="radio-label"><input type="radio" name="pay_${p.id}" ${p.paymentInst==='CEK/GIRO'?'checked':''} onclick="updateField('${p.id}','paymentInst','CEK/GIRO')"> CEK/GIRO</label>
+            <label class="radio-label"><input type="radio" name="pay_${p.id}" ${p.paymentInst==='DEBIT/KREDIT'?'checked':''} onclick="updateField('${p.id}','paymentInst','DEBIT/KREDIT')"> DEBIT/KREDIT</label>
+            <label class="radio-label"><input type="radio" name="pay_${p.id}" ${p.paymentInst==='TRANSFER'?'checked':''} onclick="updateField('${p.id}','paymentInst','TRANSFER')"> TRANSFER</label>
+            <label class="radio-label"><input type="radio" name="pay_${p.id}" ${p.paymentInst==='NONE'?'checked':''} onclick="updateField('${p.id}','paymentInst','NONE')"> NONE</label>
+        </div>
+    </div></div>
+    <div class="row"><div class="label">Tujuan Pembelian</div><div class="inputs" style="grid-template-columns:1fr">
+        <select class="select ${!p.purpose?'unselected':''}" onchange="this.classList.remove('unselected');updateField('${p.id}','purpose',this.value)">
+            <option value="" disabled ${!p.purpose?'selected':''}>Tujuan Pembelian</option>
+            <option value="NONE" ${p.purpose==='NONE'?'selected':''}>NONE</option>
+            <option value="PRIBADI" ${p.purpose==='PRIBADI'?'selected':''}>PRIBADI</option>
+            <option value="HADIAH" ${p.purpose==='HADIAH'?'selected':''}>HADIAH</option>
+            <option value="KANTOR/USAHA" ${p.purpose==='KANTOR/USAHA'?'selected':''}>KANTOR/USAHA</option>
+            <option value="LAINNYA" ${p.purpose==='LAINNYA'?'selected':''}>LAINNYA</option>
+        </select>
+        <label class="compact-check" style="margin-top:10px"><input type="checkbox" ${p.thirdParty?'checked':''} onchange="updateField('${p.id}','thirdParty',this.checked)"> Transaksi ditujukan untuk pihak lainnya</label>
+    </div></div>
+`;
+
+let body4 = `
+    <div class="row"><div class="label">No NPWP</div><div class="inputs">
+        <div style="display:flex;gap:12px;align-items:center">
+            <input class="input" placeholder="No NPWP" value="${esc(p.npwp)}" oninput="updateField('${p.id}','npwp',this.value)">
+            <button class="btn" style="white-space:nowrap;background:#e5e7eb;border-color:#d1d5db;color:#374151" type="button">Choose file</button>
+            <span style="font-size:13px;color:#6b7280;white-space:nowrap">No file chosen</span>
+        </div>
+    </div></div>
+    <div class="row"><div class="label">NITKU</div><div class="inputs">
+        <input class="input" placeholder="Nomor NITKU" value="${esc(p.nitku)}" oninput="updateField('${p.id}','nitku',this.value)">
+    </div></div>
+    <div class="row"><div class="label">Nama</div><div class="inputs">
+        <input class="input" placeholder="Nama" value="${esc(p.npwpName)}" oninput="updateField('${p.id}','npwpName',this.value)">
+    </div></div>
+    <div class="row"><div class="label">Alamat NPWP/NITKU</div><div class="inputs" style="grid-template-columns:1fr">
+        <textarea placeholder="Alamat" oninput="updateField('${p.id}','npwpAddr',this.value)">${esc(p.npwpAddr)}</textarea>
+    </div></div>
+`;
+
+let body5 = `
+    <div class="row"><div class="label">Beneficial owner</div><div class="inputs">
+        <input class="input" placeholder="Nama Pemilik Akhir">
+        <input class="input" placeholder="Hubungan">
+    </div></div>
+`;
+
+return sec(1,'Informasi umum pre-konsumen',body1,acc[1])
++sec(2,'Data Tanda Pengenal',body2,acc[2])
++sec(3,'PPATK',body3,acc[3])
++sec(4,'Kontak Pajak',body4,acc[4])
++sec(5,'Beneficial Owner',body5,acc[5]);
+}
+
+function previewHtml(){
+    let o=ordered().filter(p=>p.isOwner).map(name), t=ordered().filter(p=>p.taxPercent>0).map(name);
+    return `<div class="preview"><h4>DATA PEMESAN</h4><div class="p-row"><span class="p-label">NAMA</span><span>:</span><span class="p-value">${esc(joinNames(o))}</span></div><hr><h4>DATA NPWP</h4><div class="p-row"><span class="p-label">NAMA NPWP</span><span>:</span><span class="p-value">${esc(joinNames(t))}</span></div></div>`;
+}
+
+function setActive(id){active=id;render()}
+function addPemesan(){
+    let n=makePemesan(pemesans.length+1);
+    pemesans.push(n);
+    active=n.id;
+    render();
+    setTimeout(() => {
+        let tabsEl = document.querySelector('.tabs');
+        if(tabsEl) { tabsEl.scrollLeft = tabsEl.scrollWidth; }
+    }, 0);
+}
+
+function promptRemove(id){ deleteTargetId = id; render(); }
+function closeModal(){ deleteTargetId = null; render(); }
+function executeRemove(){
+    if(!deleteTargetId) return;
+    let id = deleteTargetId;
+    pemesans=pemesans.filter(p=>p.id!==id);
+    order=order.filter(x=>x!==id);
+    if(representative===id)representative=null;
+    if(active===id)active=pemesans[0]?pemesans[0].id:'umum';
+    deleteTargetId = null;
+    render();
+}
+
+function updateField(id,k,v){ let p=pemesans.find(x=>x.id===id); if(p){p[k]=v;} }
+
+function updateName(id, k, v){
+    let p=pemesans.find(x=>x.id===id);
+    if(p){
+        p[k]=v;
+        let tabEl = document.getElementById('tab-btn-' + id);
+        if(tabEl){
+            let currentIdx = pemesans.findIndex(x => x.id === id);
+            let tabName = (currentIdx + 1) + '. ' + (name(p) || ('PEMESAN ' + (currentIdx + 1)));
+            let closeBtn = currentIdx > 0 ? `<span class="x" onclick="event.stopPropagation();promptRemove('${id}')">×</span>` : '';
+            tabEl.innerHTML = esc(tabName) + closeBtn;
+        }
+    }
+}
+
+function tax(id,v){let p=pemesans.find(x=>x.id===id);if(p)p.taxPercent=Math.max(0,Math.min(100,Number(v)||0));render()}
+
+function toggleAcc(pId, secNum){
+    let acc = getAcc(pId);
+    let willOpen = !acc[secNum];
+    Object.keys(acc).forEach(k => acc[k] = false);
+    acc[secNum] = willOpen;
+    render();
+}
+
+function owner(id, v){
+    let p = pemesans.find(x => x.id === id);
+    if(p){
+        let wasOwner = p.isOwner;
+        p.isOwner = v;
+        lastMovedId = id;
+        setTimeout(() => { if(lastMovedId === id) lastMovedId = null; }, 1000);
+
+        if(!v && representative === id) { representative = null; }
+
+        if(v && !wasOwner) {
+            order = order.filter(x => x !== id);
+            order.push(id);
+        } else if(!v) {
+            order = order.filter(x => x !== id);
+        }
+
+        let owners = pemesans.filter(item => item.isOwner);
+        let nonOwners = pemesans.filter(item => !item.isOwner);
+        let byId = new Map(pemesans.map(item => [item.id, item]));
+        
+        let seq = order.filter(oid => byId.has(oid) && byId.get(oid).isOwner);
+        let rest = owners.filter(item => !seq.includes(item.id)).map(item => item.id);
+        order = [...seq, ...rest];
+
+        pemesans = [...order.map(oid => byId.get(oid)), ...pemesans.filter(item => !item.isOwner && !order.includes(item.id))];
+    }
+    render();
+}
+
+function rep(id){representative=id;render()}
+
+let dragId=null;
+function onDragStart(e, id) { dragId = id; e.currentTarget.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; }
+function onDragEnd(e) {
+    e.currentTarget.classList.remove('dragging');
+    document.querySelectorAll('.sort-item').forEach(el => el.classList.remove('drag-over'));
+    dragId = null;
+}
+function onDragEnter(e, id) { e.preventDefault(); if (e.currentTarget.dataset.id !== dragId) { e.currentTarget.classList.add('drag-over'); } }
+function onDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+function drop(e, to){
+    e.preventDefault();
+    document.querySelectorAll('.sort-item').forEach(el => el.classList.remove('drag-over'));
+    if(!dragId || dragId===to) return;
+    let owners = pemesans.filter(p => p.isOwner);
+    let nonOwners = pemesans.filter(p => !p.isOwner);
+    let ownerIds = owners.map(p => p.id);
+    let a = ownerIds.indexOf(dragId), b = ownerIds.indexOf(to);
+    if(a < 0 || b < 0) return;
+    ownerIds.splice(b, 0, ownerIds.splice(a, 1)[0]);
+    let ownerMap = new Map(owners.map(p => [p.id, p]));
+    pemesans = [...ownerIds.map(id => ownerMap.get(id)), ...nonOwners];
+    order = ownerIds;
+    dragId = null;
+    render();
+}
+
+render();
+</script>
+</body>
+</html>

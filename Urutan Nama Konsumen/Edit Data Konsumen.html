@@ -1,0 +1,222 @@
+<!doctype html><html lang="id"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Update Urutan Nama Konsumen | Sales Dashboard</title><style>
+*{box-sizing:border-box}body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f7f8fa;color:#172033}button,input,textarea{font:inherit}.header{background:#fff;border-bottom:1px solid #e5e7eb}.header-in{max-width:1550px;margin:auto;padding:16px 24px;display:flex;gap:12px;align-items:center}.back{font-size:22px;color:#697386}.title{font-size:18px;font-weight:650}.layout{max-width:1550px;margin:auto;padding:32px 24px;display:grid;grid-template-columns:380px minmax(0,1fr);gap:24px}.card{background:#fff;border:1px solid #e1e5ea;border-radius:12px;box-shadow:0 2px 6px #0000000a}.side{padding:24px}
+.side-label{font-size:14px;color:#4b5563;margin-bottom:8px;display:block}
+.types-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px}
+.type-box{border:1px solid #e1e5ea;border-radius:8px;padding:14px;background:#fff;display:flex;gap:10px;align-items:flex-start}
+.type-box.sel{border-color:#3984e8;background:#eff6ff}
+.custom-radio{width:16px;height:16px;border:2px solid #9ca3af;border-radius:50%;margin-top:2px;display:grid;place-items:center;flex:none;background:#fff}
+.type-box.sel .custom-radio{border-color:#3984e8}
+.type-box.sel .custom-radio::after{content:"";width:8px;height:8px;background:#3984e8;border-radius:50%}
+.field-group{margin-bottom:18px}
+.field-label{font-size:14px;color:#374151;margin-bottom:8px;display:block}
+.select-box{border:1px solid #e2e8f0;background:#f8fafc;border-radius:8px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;color:#475569;font-size:14px}
+.file-upload-box{border:1px solid #e2e8f0;border-radius:8px;padding:16px;background:#fff;display:flex;align-items:center;justify-content:space-between}
+.file-info{display:flex;align-items:center;gap:12px}
+.file-name{font-size:14px;font-weight:500;color:#1e293b;margin-bottom:2px}
+.file-size{font-size:12px;color:#64748b}
+.trash-btn{border:1px solid #e2e8f0;background:#fff;border-radius:6px;width:36px;height:36px;display:grid;place-items:center;cursor:pointer}
+.panel-head,.panel-foot{padding:16px 24px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;gap:12px}.panel-foot{border-top:1px solid #e5e7eb;border-bottom:0}.step{width:28px;height:28px;border-radius:50%;background:#3984e8;color:white;display:inline-grid;place-items:center;font-size:12px;font-weight:700;margin-right:10px}.panel-title{font-size:16px;font-weight:650}.workspace{padding:20px 24px}.workspace-columns{display:grid;grid-template-columns:1fr 1fr 420px;gap:24px;align-items:start}.list-card{height:550px;border:1px solid #e1e5ea;border-radius:7px;overflow:hidden;display:flex;flex-direction:column}.list-head{padding:10px 16px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}.list-head span:last-child{font-weight:500;text-transform:none;letter-spacing:0}.list{padding:16px;overflow:auto;flex:1}.item{min-height:44px;border:1px solid #e1e5ea;border-radius:7px;padding:10px 12px;display:flex;align-items:center;gap:8px;margin-bottom:8px;background:#fff;cursor:grab;box-shadow:0 1px 2px #00000008}.item.used{opacity:.45;pointer-events:none}.num{width:20px;font-size:12px;color:#697386;font-weight:650}.grip{font-size:16px;color:#8b95a5}.name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;font-size:12px}.check{color:#22a06b;font-weight:800}.slot{cursor:grab}.empty{border:2px dashed #d8dde5;background:#fafbfc;color:#7a8494;cursor:default}.over{border-color:#3984e8;background:#eff6ff}.x{border:0;background:transparent;font-size:18px;color:#697386;cursor:pointer}.full{width:100%;margin-top:24px}.btn{border:1px solid #d8dde5;background:#fff;border-radius:7px;padding:9px 14px;cursor:pointer}.btn.primary{background:#3984e8;color:#fff;border-color:#3984e8}.btn:disabled{opacity:.45;cursor:not-allowed}.actions{display:flex;gap:8px}.status{font-size:12px;color:#6b7280}.toast{position:fixed;right:24px;bottom:24px;background:#172033;color:#fff;padding:12px 16px;border-radius:8px;display:none;box-shadow:0 5px 20px #0003}.toast.show{display:block}
+
+/* Styling Kolom Catatan di Bawah Preview */
+.notes-container{margin-top:20px}
+.notes-label{font-size:14px;font-weight:650;color:#374151;margin-bottom:8px;display:block}
+.notes-textarea{width:100%;border:1px solid #e1e5ea;border-radius:8px;padding:12px 14px;font-size:14px;color:#1e293b;background:#fff;resize:vertical;outline:none;min-height:100px}
+.notes-textarea:focus{border-color:#3984e8;box-shadow:0 0 0 3px rgba(57,132,232,0.15)}
+
+.preview-label{font-size:13px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.02em;margin-bottom:12px}
+.preview-card{background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:24px;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
+.preview-section h4{font-size:12px;font-weight:750;color:#2c3e50;margin:0 0 10px 0;text-transform:uppercase}
+.preview-row{display:flex;align-items:flex-start;font-size:12px;line-height:1.5}
+.preview-key{width:100px;flex:none;color:#64748b}
+.preview-colon{margin-right:12px;color:#64748b}
+.preview-val{flex:1;font-weight:750;color:#2c3e50;text-transform:uppercase}
+@media(max-width:1400px){.workspace-columns{grid-template-columns:1fr 1fr}.preview-container{grid-column:span 2}.layout{grid-template-columns:1fr}.list-card{height:400px}}@media(max-width:800px){.workspace-columns{grid-template-columns:1fr}.preview-container{grid-column:span 1}}@media(max-width:600px){.layout{padding:16px}.header-in{padding:14px 16px}.types{grid-template-columns:1fr}.workspace,.panel-head,.panel-foot{padding-left:16px;padding-right:16px}.panel-foot{align-items:flex-start;flex-direction:column}.actions{width:100%;flex-wrap:wrap}}
+</style></head><body>
+<header class="header"><div class="header-in"><span class="back">←</span><div class="title">Perubahan Komposisi Pajak &amp; Urutan Nama Konsumen</div></div></header>
+<main class="layout">
+<aside class="card side">
+<span class="side-label">Pilih tipe perubahan</span>
+<div class="types-grid">
+<div class="type-box">
+<div class="custom-radio"></div>
+<div>
+<b style="font-size:13px;color:#1e293b;margin-bottom:2px;display:block;font-weight:600">Komposisi Pajak</b>
+<small style="font-size:11px;color:#64748b;line-height:1.2;display:block">Ubah persentase komposisi pajak</small>
+</div>
+</div>
+<div class="type-box sel">
+<div class="custom-radio"></div>
+<div>
+<b style="font-size:13px;color:#1e293b;margin-bottom:2px;display:block;font-weight:600">Urutan Nama Konsumen</b>
+<small style="font-size:11px;color:#64748b;line-height:1.2;display:block">Ubah urutan nama konsumen</small>
+</div>
+</div>
+</div>
+
+<div class="field-group">
+<label class="field-label">Project</label>
+<div class="select-box"><span>GINZA BEACHWALK</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div>
+</div>
+
+<div class="field-group">
+<label class="field-label">Company</label>
+<div class="select-box"><span>PT CITRA ABADI MANDIRI</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div>
+</div>
+
+<div class="field-group">
+<label class="field-label">Sub Project</label>
+<div class="select-box"><span>GINZA BEACHWALK</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div>
+</div>
+
+<div class="field-group">
+<label class="field-label">Kode reservasi</label>
+<div class="select-box"><span>GA2-D15</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div>
+</div>
+
+<div class="field-group" style="margin-bottom:0">
+<label class="field-label">Lampiran file <span style="color:#dc2626">*</span></label>
+<div class="file-upload-box">
+<div class="file-info">
+<svg width="34" height="42" viewBox="0 0 32 40" fill="none">
+<path d="M4 0C1.79086 0 0 1.79086 0 4V36C0 38.2091 1.79086 40 4 40H28C30.2091 40 32 38.2091 32 36V10.8284C32 9.7674 31.5786 8.75 30.8284 8L24 1.17157C23.25 0.421427 22.2326 0 21.1716 0H4Z" fill="#E2E8F0"/>
+<path d="M21.1716 0L32 10.8284H25C22.7909 10.8284 21.1716 9.20914 21.1716 7V0Z" fill="#CBD5E1"/>
+<rect x="4" y="24" width="18" height="11" rx="2" fill="#EF4444"/>
+<text x="6" y="32" fill="white" font-size="8.5" font-family="sans-serif" font-weight="bold">PDF</text>
+</svg>
+<div>
+<div class="file-name">cover note.pdf</div>
+<div class="file-size">201.8 KB</div>
+</div>
+</div>
+<button class="trash-btn">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"/></svg>
+</button>
+</div>
+</div>
+</aside>
+
+<section class="card">
+<div class="panel-head"><div><span class="step">1</span><span class="panel-title">Update Urutan Nama Konsumen</span></div><span id="count" class="status">0 / 8 slot terisi</span></div>
+<div class="workspace">
+<div class="workspace-columns">
+<div class="list-card"><div class="list-head"><span>Data Asli</span><span id="available">8 tersedia</span></div><ul id="source" class="list"></ul></div>
+<div class="list-card"><div class="list-head"><span>Urutan Baru</span><span>Slot 1 - 8</span></div><ul id="slots" class="list"></ul></div>
+
+<!-- Kolom Preview & Catatan Digabung di Kolom Kanan -->
+<div class="preview-container">
+<div class="preview-label">LIVE PREVIEW DOKUMEN</div>
+<div class="preview-card">
+<div class="preview-section">
+<h4>DATA PEMESAN</h4>
+<div class="preview-row">
+<span class="preview-key">NAMA</span>
+<span class="preview-colon">:</span>
+<span class="preview-val" id="owners">-</span>
+</div>
+</div>
+<div style="border-top:1px solid #cbd5e1;margin:16px 0"></div>
+<div class="preview-section">
+<h4>DATA NPWP</h4>
+<div class="preview-row">
+<span class="preview-key">NAMA NPWP</span>
+<span class="preview-colon">:</span>
+<span class="preview-val" id="payers">-</span>
+</div>
+</div>
+</div>
+
+<div class="notes-container">
+<label class="notes-label">Catatan</label>
+<textarea class="notes-textarea" placeholder="e.g Perubahan data 2 konsumen"></textarea>
+</div>
+</div>
+
+</div>
+<button id="fill" class="btn full">Isi Sisa Slot Kosong</button>
+</div>
+<footer class="panel-foot"><span id="status" class="status">Harap isi semua slot yang masih kosong.</span><div class="actions"><button id="reset" class="btn">↻ Reset</button><button id="save" class="btn primary" disabled>Simpan</button></div></footer>
+</section></main><div id="toast" class="toast"></div>
+
+<script>
+const customers=[['BUDI YANTO',30,'3172011701880006'],['BOE SIAN IN',10,'3172014505700010'],['FENTY ABIDIN.SH',10,'3172015412580006'],['JONNY',10,'3603280106800010'],['RATNA MARETTA',10,'3172014205500002'],['SHANHONG ZHANG',10,'3173044606805001'],['SHINTA ZUARY',10,'3172016308920001'],['KIE INDRAYANI HARYONO',0,'3172015408800007']].map((x,i)=>({id:i+1,name:x[0],tax:x[1],npwp:x[2]}));
+const ady={id:9,name:'ADY LIE',tax:10,npwp:'3172011412760001'};let slots=Array(8).fill(null),drag=null;
+const $=id=>document.getElementById(id);
+function toast(t){$('toast').textContent=t;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),2200)}
+
+function updateLivePreview(){
+    const ordered=slots.map(id=>customers.find(c=>c.id===id)).filter(Boolean);
+    const join=a=>a.length<2?a[0]?.name||'-':a.slice(0,-1).map(c=>c.name).join(', ')+' & '+a.at(-1).name;
+    $('owners').textContent=join(ordered);
+    $('payers').textContent=join([...ordered.filter(c=>c.tax>0),ady]);
+}
+
+function render(){
+    const slotContainer = $('slots');
+    const prevRects = new Map();
+    
+    if (slotContainer) {
+        slotContainer.querySelectorAll('[data-cid]').forEach(el => {
+            prevRects.set(el.dataset.cid, el.getBoundingClientRect());
+        });
+    }
+
+    const used=new Set(slots.filter(x=>x));
+    $('source').innerHTML=customers.map((c,i)=>`<li class="item ${used.has(c.id)?'used':''}" draggable="${!used.has(c.id)}" data-id="${c.id}"><span class="grip">⋮⋮</span><span class="num">${i+1}</span><span class="name">${c.name}</span><span class="check">✓</span></li>`).join('');
+    
+    slotContainer.innerHTML=slots.map((id,i)=>{
+        const c=customers.find(x=>x.id===id);
+        return `<li class="item slot ${!c?'empty':''}" data-slot="${i}" ${c?`data-cid="${c.id}"`:''} draggable="${!!c}"><span class="grip" style="${!c?'visibility:hidden':''}">⋮⋮</span><span class="num">${i+1}</span>${c?`<span class="name">${c.name}</span><span class="check">✓</span><button class="x" data-clear="${i}">×</button>`:`<span class="name" style="font-weight:400;font-size:12px">Slot #${i+1} - Kosong</span>`}</li>`
+    }).join('');
+
+    const n=used.size,complete=n===8;
+    $('count').textContent=`${n} / 8 slot terisi`;
+    $('available').textContent=`${8-n} tersedia`;
+    $('status').textContent=complete?'Semua 8 slot terisi - siap disimpan.':'Harap isi semua slot yang masih kosong.';
+    $('fill').disabled=complete;
+    $('save').disabled=!complete;
+
+    updateLivePreview();
+
+    slotContainer.querySelectorAll('[data-cid]').forEach(el => {
+        const cid = el.dataset.cid;
+        const prev = prevRects.get(cid);
+        if (prev) {
+            const current = el.getBoundingClientRect();
+            const dx = prev.left - current.left;
+            const dy = prev.top - current.top;
+            if (dx !== 0 || dy !== 0) {
+                el.style.transform = `translate(${dx}px, ${dy}px)`;
+                el.style.transition = 'none';
+                requestAnimationFrame(() => {
+                    el.style.transition = 'transform 0.3s cubic-bezier(0.2, 0, 0, 1)';
+                    el.style.transform = '';
+                });
+            }
+        }
+    });
+
+    $('source').querySelectorAll('[data-id]').forEach(el=>el.ondragstart=e=>{drag={kind:'source',id:+el.dataset.id}});
+    $('slots').querySelectorAll('.slot').forEach(el=>{
+        el.ondragover=e=>{e.preventDefault();el.classList.add('over')};
+        el.ondragleave=()=>el.classList.remove('over');
+        el.ondrop=e=>{
+            e.preventDefault();
+            el.classList.remove('over');
+            if(!drag)return;
+            const i=+el.dataset.slot;
+            if(drag.kind==='source')slots[i]=drag.id;
+            else{[slots[i],slots[drag.index]]=[slots[drag.index],slots[i]]}
+            drag=null;
+            render()
+        };
+        el.ondragstart=()=>{drag={kind:'slot',index:+el.dataset.slot}}
+    });
+    $('slots').querySelectorAll('[data-clear]').forEach(b=>b.onclick=e=>{e.stopPropagation();slots[+b.dataset.clear]=null;render()})
+}
+
+$('fill').onclick=()=>{const used=new Set(slots.filter(x=>x));const rem=customers.filter(c=>!used.has(c.id)).map(c=>c.id);let p=0;slots=slots.map(x=>x??rem[p++]??null);render()};
+$('reset').onclick=()=>{slots=Array(8).fill(null);render();toast('Semua slot dikosongkan.')};
+$('save').onclick=()=>toast('Perubahan disimpan — 8 pemilik masuk dokumen legal.');
+render();
+</script></body></html>
+```[cite: 2]
