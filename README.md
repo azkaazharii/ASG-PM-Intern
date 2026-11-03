@@ -1,4 +1,5 @@
-Agung Sedayu Group – Product Development
+Agung Sedayu Group – Product Management
+
 This repository contains a collection of prototypes and product improvements developed during my internship as a Product Management Intern at Agung Sedayu Group (ASG).
 
 Throughout this experience, I worked on exploring and translating business needs into practical improvements for internal applications through interactive prototyping. The work covered a wide range of enhancements, from small usability refinements that simplify everyday interactions to the introduction of new features and workflow improvements designed to make existing processes faster and more efficient.
