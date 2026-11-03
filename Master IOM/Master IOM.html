@@ -1,0 +1,2737 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master IOM - VS SAD (Production)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #ffffff;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .grid-table {
+            table-layout: fixed;
+            width: 100%;
+        }
+        .grid-table td {
+            border: 1px solid #e2e8f0;
+            padding-top: 5.5px;
+            padding-bottom: 5.5px;
+            padding-left: 8px;
+            padding-right: 8px;
+            vertical-align: middle;
+        }
+        .grid-table th {
+            border: 1px solid #e2e8f0;
+            padding-top: 5.5px;
+            padding-bottom: 5.5px;
+            padding-left: 8px;
+            padding-right: 8px;
+            vertical-align: middle;
+            font-weight: 400;
+        }
+        .multi-line-cell {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: normal;
+            line-height: 1.2;
+            max-height: 2.4em;
+        }
+        .grid-table thead tr {
+            background-color: #F7F8FA;
+        }
+        .grid-table tbody tr {
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+        }
+        .grid-table tbody tr:nth-child(odd) {
+            background-color: #FFFFFF;
+        }
+        .grid-table tbody tr:nth-child(even) {
+            background-color: #FAFAFA;
+        }
+        .grid-table tbody tr:hover {
+            background-color: #EFF6FF !important;
+        }
+        .dropdown-checkbox-content {
+            display: none;
+            position: absolute;
+            background-color: #fff;
+            min-width: 100%;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.1);
+            z-index: 50;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.375rem;
+            max-height: 180px;
+            overflow-y: auto;
+        }
+        .dropdown-checkbox-content.show {
+            display: block;
+        }
+    </style>
+</head>
+<body class="flex h-screen w-screen overflow-hidden text-slate-700 text-xs">
+
+    <!-- SIDEBAR -->
+    <aside class="w-14 bg-black flex flex-col items-center py-4 shrink-0 select-none h-full">
+        <div class="w-9 h-9 rounded-lg text-white flex items-center justify-center cursor-pointer hover:bg-slate-800 transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+                <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+                <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+                <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+            </svg>
+        </div>
+    </aside>
+
+    <!-- MAIN APP CONTAINER -->
+    <div class="flex-1 flex h-full overflow-hidden relative">
+        
+        <!-- BACKDROP -->
+        <div id="drawer-backdrop" onclick="closeAllDrawers()" class="absolute inset-0 bg-black/50 z-40 transition-opacity duration-300 opacity-0 pointer-events-none"></div>
+
+        <!-- MAIN TABLE SECTION -->
+        <main class="flex-1 flex flex-col h-full bg-white overflow-hidden">
+            
+            <!-- HEADER -->
+            <header class="h-10 px-6 pt-2 pb-0 flex items-center justify-between shrink-0 bg-white">
+                <h1 class="text-base font-medium text-slate-800">Master IOM</h1>
+            </header>
+
+            <!-- SUB-HEADER APPROVAL FILTER PILLS & ACTION CONTROLS -->
+            <div class="px-6 py-1.5 bg-white flex items-center justify-between gap-4 shrink-0">
+                <!-- Pills -->
+                <div class="flex items-center gap-2 overflow-x-auto shrink">
+                    <button onclick="filterByApproval('ALL')" id="pill-all" class="px-3.5 py-1 rounded-full border border-slate-200 text-xs font-medium transition shadow-2xs whitespace-nowrap" style="background-color: #0F172A; color: #FFFFFF;">
+                        <span>All</span>
+                    </button>
+                    <button onclick="filterByApproval('DRAFT')" id="pill-draft" class="px-3.5 py-1 rounded-full border border-slate-200 text-xs font-medium transition shadow-2xs bg-white text-slate-600 whitespace-nowrap">
+                        <span>Draft</span>
+                    </button>
+                    <button onclick="filterByApproval('WAITING FOR APPROVAL')" id="pill-waiting" class="px-3.5 py-1 rounded-full border border-slate-200 text-xs font-medium transition shadow-2xs bg-white text-slate-600 whitespace-nowrap">
+                        <span>Waiting for Approval</span>
+                    </button>
+                    <button onclick="filterByApproval('REJECTED')" id="pill-rejected" class="px-3.5 py-1 rounded-full border border-slate-200 text-xs font-medium transition shadow-2xs bg-white text-slate-600 whitespace-nowrap">
+                        <span>Rejected</span>
+                    </button>
+                    <button onclick="filterByApproval('APPROVED')" id="pill-approved" class="px-3.5 py-1 rounded-full border border-slate-200 text-xs font-medium transition shadow-2xs bg-white text-slate-600 whitespace-nowrap">
+                        <span>Approved</span>
+                    </button>
+                </div>
+
+                <!-- Search & Filters -->
+                <div class="flex items-center gap-3 relative shrink-0">
+                    <!-- Search Bar -->
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        </span>
+                        <input type="text" id="search-input" oninput="handleSearch()" placeholder="Cari data..." class="w-56 pl-9 pr-4 py-1.5 bg-white border border-slate-200 rounded-md text-[11px] focus:outline-none focus:ring-1 focus:ring-blue-500 transition">
+                    </div>
+
+                    <!-- Filter Button & Dropdown -->
+                    <div class="relative">
+                        <button onclick="toggleFilterDropdown(event)" class="p-2 border border-slate-200 rounded-md text-slate-600 hover:bg-slate-50 transition flex items-center justify-center w-8 h-8">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <line x1="4" y1="7" x2="20" y2="7"></line>
+                                <line x1="7" y1="12" x2="17" y2="12"></line>
+                                <line x1="10" y1="17" x2="14" y2="17"></line>
+                            </svg>
+                        </button>
+
+                        <div id="filter-dropdown" class="hidden absolute right-0 mt-2 w-72 bg-white border border-slate-200 rounded-lg shadow-xl p-4 z-50 text-[11px]" onclick="event.stopPropagation()">
+                            <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+                                <span class="font-semibold text-slate-800 text-xs">Filter</span>
+                                <button onclick="toggleFilterDropdown(event)" class="text-slate-400 hover:text-slate-600 transition">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                </button>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="block font-medium text-slate-700 mb-1">Tipe IOM</label>
+                                <select id="filter-tipe" class="w-full p-2 border border-slate-200 rounded-md bg-white text-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                    <option value="">None</option>
+                                    <option value="ALIH HAK">Alih Hak</option>
+                                    <option value="IPL">IPL</option>
+                                    <option value="AJB">AJB</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="block font-medium text-slate-700 mb-1">Jenis IOM</label>
+                                <select id="filter-jenis" class="w-full p-2 border border-slate-200 rounded-md bg-white text-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                    <option value="">None</option>
+                                    <option value="GENERAL">General</option>
+                                    <option value="SPECIAL">Special</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="block font-medium text-slate-700 mb-1">Status</label>
+                                <select id="filter-status" class="w-full p-2 border border-slate-200 rounded-md bg-white text-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                    <option value="">None</option>
+                                    <option value="ACTIVE">Active</option>
+                                    <option value="INACTIVE">Inactive</option>
+                                </select>
+                            </div>
+
+                            <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+                                <button onclick="resetFilter()" class="text-blue-600 hover:text-blue-700 font-medium transition">Atur ulang</button>
+                                <button onclick="applyFilter()" style="background-color: #0E89F9;" class="text-white px-4 py-1.5 rounded-md font-medium hover:opacity-90 transition shadow-sm">Terapkan</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tambah IOM Button -->
+                    <div class="relative">
+                        <button onclick="toggleAddModal(event)" style="background-color: #0E89F9;" class="hover:opacity-90 text-white font-medium px-3.5 py-1.5 rounded-md flex items-center gap-1.5 shadow-sm transition text-xs whitespace-nowrap">
+                            Tambah IOM 
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </button>
+
+                        <div id="add-modal" class="hidden absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-xl shadow-xl py-2 z-50 text-xs" onclick="event.stopPropagation()">
+                            <button type="button" onclick="openAddDrawer('ALIH HAK')" class="w-full text-left px-4 py-2.5 text-slate-700 hover:bg-slate-50 transition">IOM Free alih hak</button>
+                            <button type="button" onclick="openAddDrawer('IPL')" class="w-full text-left px-4 py-2.5 text-slate-700 hover:bg-slate-50 transition">IOM Free IPL</button>
+                            <button type="button" onclick="openAddDrawer('AJB')" class="w-full text-left px-4 py-2.5 text-slate-700 hover:bg-slate-50 transition">IOM Free Biaya AJB</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TABLE CONTAINER -->
+            <div class="flex-1 flex flex-col px-6 pt-0.5 pb-4 overflow-hidden justify-between">
+                <div class="border border-slate-200 rounded-none overflow-hidden shadow-sm bg-white">
+                    <table class="text-left border-collapse grid-table">
+                        <colgroup>
+                            <col style="width: 10%;">
+                            <col style="width: 10%;">
+                            <col style="width: 10%;">
+                            <col style="width: 10%;">
+                            <col style="width: 10%;">
+                            <col style="width: 10%;">
+                            <col style="width: 10%;">
+                            <col style="width: 10%;">
+                            <col style="width: 10%;">
+                            <col style="width: 10%;">
+                        </colgroup>
+                        <thead>
+                            <tr class="text-slate-600 tracking-normal text-[9px]">
+                                <th class="cursor-pointer hover:bg-slate-200 transition select-none" onclick="sortTable(0)">
+                                    <div class="flex items-center justify-between">
+                                        <span>NO. IOM</span>
+                                        <div class="flex flex-col -space-y-1 text-slate-400 shrink-0">
+                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                        </div>
+                                    </div>
+                                </th>
+                                <th class="cursor-pointer hover:bg-slate-200 transition select-none" onclick="sortTable(1)">
+                                    <div class="flex items-center justify-between">
+                                        <span>TANGGAL MEMO</span>
+                                        <div class="flex flex-col -space-y-1 text-slate-400 shrink-0">
+                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                        </div>
+                                    </div>
+                                </th>
+                                <th class="cursor-pointer hover:bg-slate-200 transition select-none" onclick="sortTable(2)">
+                                    <div class="flex items-center justify-between">
+                                        <span>NAMA IOM</span>
+                                        <div class="flex flex-col -space-y-1 text-slate-400 shrink-0">
+                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                        </div>
+                                    </div>
+                                </th>
+                                <th class="cursor-pointer hover:bg-slate-200 transition select-none" onclick="sortTable(3)">
+                                    <div class="flex items-center justify-between">
+                                        <span>TIPE IOM</span>
+                                        <div class="flex flex-col -space-y-1 text-slate-400 shrink-0">
+                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                        </div>
+                                    </div>
+                                </th>
+                                <th class="cursor-pointer hover:bg-slate-200 transition select-none" onclick="sortTable(4)">
+                                    <div class="flex items-center justify-between">
+                                        <span>JENIS IOM</span>
+                                        <div class="flex flex-col -space-y-1 text-slate-400 shrink-0">
+                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                        </div>
+                                    </div>
+                                </th>
+                                <th class="cursor-pointer hover:bg-slate-200 transition select-none" onclick="sortTable(5)">
+                                    <div class="flex items-center justify-between">
+                                        <span>TANGGAL IOM BERLAKU</span>
+                                        <div class="flex flex-col -space-y-1 text-slate-400 shrink-0">
+                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                        </div>
+                                    </div>
+                                </th>
+                                <th class="cursor-pointer hover:bg-slate-200 transition select-none" onclick="sortTable(6)">
+                                    <div class="flex items-center justify-between">
+                                        <span>TANGGAL IOM BERAKHIR</span>
+                                        <div class="flex flex-col -space-y-1 text-slate-400 shrink-0">
+                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                        </div>
+                                    </div>
+                                </th>
+                                <th class="cursor-pointer hover:bg-slate-200 transition select-none" onclick="sortTable(7)">
+                                    <div class="flex items-center justify-between">
+                                        <span>STATUS</span>
+                                        <div class="flex flex-col -space-y-1 text-slate-400 shrink-0">
+                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                        </div>
+                                    </div>
+                                </th>
+                                <th class="cursor-pointer hover:bg-slate-200 transition select-none" onclick="sortTable(8)">
+                                    <div class="flex items-center justify-between">
+                                        <span>STATUS APPROVAL</span>
+                                        <div class="flex flex-col -space-y-1 text-slate-400 shrink-0">
+                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                        </div>
+                                    </div>
+                                </th>
+                                <th class="cursor-pointer hover:bg-slate-200 transition select-none" onclick="sortTable(9)">
+                                    <div class="flex items-center justify-between">
+                                        <span>DIBUAT OLEH</span>
+                                        <div class="flex flex-col -space-y-1 text-slate-400 shrink-0">
+                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                        </div>
+                                    </div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body" class="text-slate-700 font-normal text-[9px]">
+                            <!-- Rendered via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- PAGINATION -->
+                <div class="flex items-center justify-between px-2 text-slate-500 text-xs shrink-0 pt-1">
+                    <div id="pagination-info">Item 1 to 15 of 45 item</div>
+                    <div class="flex items-center gap-1" id="pagination-buttons"></div>
+                    <div class="flex items-center gap-2">
+                        <span>15</span>
+                        <span class="text-slate-400">item per pages</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- RIGHT: DETAIL DRAWER CONTAINER WRAPPER -->
+        <div id="drawer-container-wrapper" class="absolute top-0 right-0 h-full flex z-50 pointer-events-none transition-all duration-300 overflow-hidden" style="width: 0px;">
+            
+            <!-- DETAIL DRAWER -->
+            <aside id="detail-drawer" class="h-full w-full bg-white border-l border-slate-200 flex flex-col overflow-hidden shadow-2xl pointer-events-auto shrink-0 relative transition-all duration-300">
+                
+                <!-- HEADER -->
+                <div class="absolute top-0 left-0 right-0 z-30 bg-white">
+                    <div id="drawer-header-view" class="h-14 px-6 border-b border-slate-200 flex items-center justify-between bg-white w-full">
+                        <div class="flex items-center gap-2 text-slate-700 text-xs font-medium min-w-0">
+                            <span class="text-slate-500 text-[11px] shrink-0">Detail IOM</span>
+                            <span class="text-slate-300 text-[11px] shrink-0">/</span>
+                            <div class="inline-flex items-center gap-2 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-md text-slate-700 font-normal text-[11px] truncate">
+                                <span id="drawer-title-code" class="truncate">-</span>
+                                <button onclick="copyDrawerCode()" class="text-slate-400 hover:text-slate-600 transition shrink-0" title="Salin No. IOM">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            <button id="btn-toggle-status" onclick="openEndDateModal()" class="px-2 py-1 border border-slate-200 rounded text-slate-600 hover:bg-slate-50 transition flex items-center gap-1 text-[10px] font-normal shrink-0"></button>
+                            <button onclick="toggleApprovalHistoryDrawer()" class="px-2 py-1 border border-slate-200 rounded text-slate-600 hover:bg-slate-50 transition flex items-center gap-1 text-[10px] font-normal shrink-0" title="Riwayat approval">
+                                <svg class="w-3 h-3 text-[#778599]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                Riwayat approval
+                            </button>
+                            <button id="btn-doc-history" onclick="toggleDocHistoryDrawer()" class="px-2 py-1 border border-slate-200 rounded text-slate-600 hover:bg-slate-50 transition flex items-center gap-1 text-[10px] font-normal shrink-0" title="Riwayat dokumen">
+                                <svg class="w-3 h-3 text-[#778599]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+                                Riwayat dokumen
+                            </button>
+                            <button id="btn-edit-drawer" onclick="switchToEditMode()" class="px-2 py-1 border border-slate-200 rounded text-slate-600 hover:bg-slate-50 transition flex items-center gap-1 text-[10px] font-normal shrink-0">
+                                <svg class="w-3 h-3 text-[#778599]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                Ubah
+                            </button>
+                            <button onclick="closeAllDrawers()" class="p-1.5 border border-slate-200 rounded-md text-slate-600 hover:bg-slate-50 transition flex items-center justify-center w-6 h-6 shrink-0 ml-0.5">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="drawer-header-edit" class="hidden h-14 px-6 border-b border-slate-200 flex items-center justify-between bg-white w-full">
+                        <span id="edit-drawer-title" class="text-xs font-semibold text-slate-800">Ubah IOM Free alih hak</span>
+                        <button onclick="switchToViewMode()" class="p-2 border border-slate-200 rounded-md text-slate-600 hover:bg-slate-50 transition flex items-center justify-center w-7 h-7">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- CONTAINER BODY & HISTORY -->
+                <div class="flex-1 flex h-full overflow-hidden relative w-full pt-14">
+                    
+                    <!-- KIRI: KONTEN UTAMA -->
+                    <div class="flex-1 flex flex-col h-full overflow-hidden transition-all duration-300">
+                        <div id="drawer-body-view" class="flex-1 overflow-y-auto p-6 space-y-3.5 text-[11px] text-slate-700 bg-white pb-20">
+                            <div class="grid grid-cols-4 items-center py-1">
+                                <span class="text-slate-500 col-span-2">Nama IOM</span>
+                                <span id="det-nama" class="col-span-2 font-normal text-slate-800">-</span>
+                            </div>
+                            <div class="grid grid-cols-4 items-center py-1">
+                                <span class="text-slate-500 col-span-2">Status</span>
+                                <div id="det-status-container" class="col-span-2"></div>
+                            </div>
+                            <div class="grid grid-cols-4 items-center py-1">
+                                <span class="text-slate-500 col-span-2">Status Approval</span>
+                                <div id="det-approval-container" class="col-span-2"></div>
+                            </div>
+                            <div class="grid grid-cols-4 items-center py-1">
+                                <span class="text-slate-500 col-span-2">Tipe IOM</span>
+                                <span id="det-tipe" class="col-span-2 font-normal text-slate-800">-</span>
+                            </div>
+                            <div class="grid grid-cols-4 items-center py-1">
+                                <span class="text-slate-500 col-span-2">Jenis IOM</span>
+                                <span id="det-jenis" class="col-span-2 font-normal text-slate-800">-</span>
+                            </div>
+                            <div class="grid grid-cols-4 items-center py-1">
+                                <span class="text-slate-500 col-span-2" id="label-maks">Maks pemakaian IOM</span>
+                                <span id="det-maks" class="col-span-2 font-normal text-slate-800">-</span>
+                            </div>
+                            <div class="grid grid-cols-4 items-center py-1">
+                                <span class="text-slate-500 col-span-2">Tanggal IOM</span>
+                                <span class="col-span-2 font-normal text-slate-800 flex items-center gap-1.5 text-slate-600">
+                                    <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                    <span id="det-tgl">-</span>
+                                </span>
+                            </div>
+                            <div class="grid grid-cols-4 items-center py-1">
+                                <span class="text-slate-500 col-span-2">Tanggal Memo</span>
+                                <span class="col-span-2 font-normal text-slate-800 flex items-center gap-1.5 text-slate-600">
+                                    <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                    <span id="det-memo-date">-</span>
+                                </span>
+                            </div>
+                            <div id="det-row-field1" class="grid grid-cols-4 items-center py-1">
+                                <span class="text-slate-500 col-span-2" id="label-field-1">Free alih hak qty</span>
+                                <span id="det-qy" class="col-span-2 font-normal text-slate-800">-</span>
+                            </div>
+                            <div id="det-row-field2" class="grid grid-cols-4 items-center py-1">
+                                <span class="text-slate-500 col-span-2" id="label-field-2">Mulai berlaku free alih hak</span>
+                                <span id="det-mulai" class="col-span-2 font-normal text-slate-800">-</span>
+                            </div>
+                            <div class="grid grid-cols-4 items-center py-1">
+                                <span class="text-slate-500 col-span-2">Lampiran IOM</span>
+                                <span class="col-span-2">
+                                    <a id="det-lampiran" href="#" onclick="openPdfTab(event)" class="font-normal text-blue-600 hover:underline truncate block">-</a>
+                                </span>
+                            </div>
+                            <div class="grid grid-cols-4 items-start py-1">
+                                <span class="text-slate-500 col-span-2 pt-0.5">Catatan IOM</span>
+                                <span id="det-catatan" class="col-span-2 font-normal text-slate-800 uppercase leading-relaxed">-</span>
+                            </div>
+
+                            <div class="pt-5 border-t border-slate-100 mt-5">
+                                <h3 class="font-semibold text-slate-800 mb-2.5 text-[11px]">Informasi project</h3>
+                                <div class="border border-slate-200 rounded-lg overflow-hidden bg-slate-50/50">
+                                    <div class="grid grid-cols-2 border-b border-slate-200 bg-slate-50 px-3.5 py-2">
+                                        <div class="flex items-center gap-1.5 text-slate-600 font-normal text-[11px]">
+                                            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                                            <span>Project</span>
+                                        </div>
+                                        <div class="flex items-center gap-1.5 text-slate-600 font-normal text-[11px] pl-3.5 border-l border-slate-200">
+                                            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                                            <span>Sub project</span>
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-2 px-3.5 py-2.5 bg-white text-[11px]">
+                                        <div class="text-slate-800 font-normal uppercase">PANTAI INDAH KAPUK 2</div>
+                                        <div class="text-slate-800 font-normal uppercase pl-3.5 border-l border-slate-100">ARCADIA</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="det-rincian-ajb-section" class="pt-5 border-t border-slate-100 mt-5 hidden">
+                                <h3 class="font-semibold text-slate-800 mb-2.5 text-[11px]">Rincian biaya</h3>
+                                <div class="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-xs">
+                                    <table class="w-full text-left border-collapse text-[11px]">
+                                        <thead>
+                                            <tr class="bg-slate-50 border-b border-slate-200 text-slate-600">
+                                                <th class="py-2 px-3 font-medium">Biaya</th>
+                                                <th class="py-2 px-3 font-medium text-right">Jumlah</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="det-rincian-ajb-tbody" class="divide-y divide-slate-100">
+                                            <!-- Rendered via JS -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- EDIT MODE BODY -->
+                        <div id="drawer-body-edit" class="hidden flex-1 overflow-y-auto p-6 space-y-3.5 text-[11px] text-slate-700 bg-white pb-24">
+                            <div>
+                                <label id="edit-label-no" class="block font-medium text-slate-600 mb-1">No IOM free alih hak</label>
+                                <input type="text" id="input-no" class="w-full p-2 border border-slate-200 rounded-md bg-white text-slate-800 text-[11px] focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label id="edit-label-nama" class="block font-medium text-slate-600 mb-1">Nama IOM free alih hak</label>
+                                <input type="text" id="input-nama" class="w-full p-2 border border-slate-200 rounded-md bg-white text-slate-800 text-[11px] focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label id="edit-label-jenis-iom" class="block font-medium text-slate-600 mb-1">Jenis IOM free alih hak</label>
+                                    <select id="input-jenis" onchange="handleEditJenisChange()" class="w-full p-2 border border-slate-200 rounded-md bg-white text-slate-800 text-[11px] focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                        <option value="GENERAL">GENERAL</option>
+                                        <option value="SPECIAL">SPECIAL</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block font-medium text-slate-600 mb-1">Batas penggunaan</label>
+                                    <input type="number" id="input-maks" class="w-full p-2 border border-slate-200 rounded-md bg-slate-100 text-slate-800 text-[11px] focus:outline-none">
+                                </div>
+                            </div>
+                            <div>
+                                <label id="edit-label-catatan" class="block font-medium text-slate-600 mb-1">Catatan alih hak</label>
+                                <textarea id="input-catatan" rows="5" style="resize: none;" class="w-full p-2 border border-slate-200 rounded-md bg-white text-slate-800 text-[11px] focus:outline-none focus:ring-1 focus:ring-blue-500"></textarea>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label id="edit-label-tgl-iom" class="block font-medium text-slate-600 mb-1">Tanggal IOM free alih hak</label>
+                                    <input type="date" id="input-tgl" onchange="handleEditTglIOMChange()" class="w-full p-2 border border-slate-200 rounded-md bg-white text-slate-800 text-[11px] focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block font-medium text-slate-600 mb-1">Tanggal Berakhir</label>
+                                    <input type="date" id="input-berakhir" class="w-full p-2 border border-slate-200 rounded-md bg-white text-slate-800 text-[11px] focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                </div>
+                            </div>
+                            <div id="edit-fields-grid" class="grid grid-cols-2 gap-4">
+                                <div id="edit-field1-container">
+                                    <label id="edit-label-field1" class="block font-medium text-slate-600 mb-1">Free alih hak qty</label>
+                                    <div id="edit-field1-wrapper" class="flex items-center">
+                                        <input type="number" id="input-field1" class="w-full p-2 border border-slate-200 rounded-md bg-white text-slate-800 text-[11px] focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                    </div>
+                                </div>
+                                <div id="edit-field2-container">
+                                    <label id="edit-label-field2" class="block font-medium text-slate-600 mb-1">Mulai berlaku free alih hak</label>
+                                    <div id="edit-field2-wrapper" class="flex items-center">
+                                        <input type="number" id="input-field2" class="w-full p-2 border border-slate-200 bg-white text-slate-800 text-[11px] focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                        <div id="edit-field2-addon" class="px-2.5 py-2 bg-slate-100 border border-slate-200 border-l-0 rounded-r-md text-slate-600 font-medium text-[10px] shrink-0 select-none">
+                                            Bulan
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block font-medium text-slate-600 mb-1">Tanggal Memo</label>
+                                <input type="date" id="input-memo-date" class="w-full p-2 border border-slate-200 rounded-md bg-white text-slate-800 text-[11px] focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            </div>
+
+                            <div>
+                                <label id="edit-label-lampiran" class="block font-medium text-slate-600 mb-1">Lampiran file IOM free alih hak</label>
+                                <input type="file" id="edit-hidden-file-input" accept=".pdf" class="hidden" onchange="promptEditFileAction(event)">
+                                
+                                <div id="edit-upload-container" class="border border-slate-200 rounded-xl p-3 bg-white transition relative">
+                                    <div id="edit-file-uploaded-view" onclick="triggerEditFileInput(event)" class="flex items-center justify-between cursor-pointer hover:border-blue-400">
+                                        <div class="flex items-center gap-3 overflow-hidden">
+                                            <div class="w-8 h-10 bg-slate-100 rounded border border-slate-200 flex flex-col items-center justify-center relative shrink-0 overflow-hidden shadow-xs">
+                                                <div class="absolute top-0 right-0 w-2.5 h-2.5 bg-white border-l border-b border-slate-200 rounded-bl"></div>
+                                                <div class="mt-1 bg-red-500 text-white font-bold text-[6px] px-1 py-0.5 rounded shadow-xs tracking-tighter">PDF</div>
+                                            </div>
+                                            <div class="truncate">
+                                                <div id="edit-file-name-display" class="text-slate-800 font-medium text-[11px] truncate">-</div>
+                                                <div id="edit-file-size-display" class="text-slate-400 text-[10px]">-</div>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center gap-1.5 shrink-0">
+                                            <button type="button" onclick="previewEditFile(event)" class="p-2 border border-slate-200 rounded-lg text-blue-500 hover:bg-blue-50 transition" title="Lihat file">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                            </button>
+                                            <button type="button" onclick="promptRemoveEditFile(event)" class="p-2 border border-slate-200 rounded-lg text-rose-500 hover:bg-rose-50 transition" title="Hapus file">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div id="edit-file-empty-view" onclick="triggerEditFileInput(event)" class="hidden py-4 border-2 border-dashed border-slate-200 rounded-lg flex flex-col items-center justify-center text-center bg-slate-50/50 cursor-pointer hover:border-blue-400">
+                                        <div class="w-8 h-8 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center mb-1.5">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                        </div>
+                                        <span class="text-slate-600 text-[11px]">Seret file kesini atau <span class="text-blue-600 font-medium">pilih file</span> dari komputer anda</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="edit-project-section-wrapper">
+                                <label class="block font-medium text-slate-600 mb-1">Informasi Project</label>
+                                <div class="border border-slate-200 rounded-xl p-4 bg-white space-y-3 shadow-xs">
+                                    <div id="edit-project-rows-container" class="space-y-3">
+                                        <!-- Rendered via JS -->
+                                    </div>
+                                    <button type="button" id="edit-btn-add-project-row" onclick="addEditProjectRow()" class="w-full py-2.5 border border-dashed border-slate-300 rounded-lg text-blue-600 hover:bg-blue-50/50 font-medium text-xs flex items-center justify-center gap-1.5 transition">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                        Informasi Project
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div id="edit-rincian-ajb-section" class="hidden space-y-2">
+                                <label class="block font-medium text-slate-600 mb-1">Rincian AJB</label>
+                                <div class="border border-slate-200 rounded-xl p-4 bg-white space-y-3 shadow-xs">
+                                    <div class="grid grid-cols-12 gap-2 text-[10px] font-medium text-slate-500 px-1">
+                                        <div class="col-span-5">Biaya</div>
+                                        <div class="col-span-6">Jumlah</div>
+                                        <div class="col-span-1"></div>
+                                    </div>
+                                    <div id="edit-rincian-ajb-rows" class="space-y-2">
+                                        <!-- Rendered via JS -->
+                                    </div>
+                                    <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+                                        <span class="font-medium text-slate-700 text-xs">Total</span>
+                                        <div class="flex items-center w-1/2">
+                                            <div class="px-2.5 py-1.5 bg-slate-100 border border-slate-200 border-r-0 rounded-l-md text-slate-600 text-[11px] font-medium">Rp</div>
+                                            <input type="text" id="edit-rincian-total" readonly class="w-full p-1.5 border border-slate-200 rounded-r-md bg-slate-50 text-slate-800 text-[11px] font-semibold text-right focus:outline-none" value="0">
+                                        </div>
+                                    </div>
+                                    <button type="button" id="edit-btn-add-rincian" onclick="addRincianAjbRow('edit')" class="text-blue-600 hover:text-blue-700 font-medium text-xs flex items-center gap-1 transition pt-1">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                        Rincian biaya
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- FOOTER ACTIONS VIEW MODE -->
+                        <div id="drawer-footer-actions" class="absolute bottom-0 right-0 left-0 bg-white border-t border-slate-200 px-6 py-3 flex items-center justify-end gap-2 z-10">
+                        </div>
+
+                        <!-- FOOTER EDIT MODE -->
+                        <div id="edit-sticky-footer" class="hidden absolute bottom-0 right-0 left-0 bg-white border-t border-slate-200 px-6 py-3 flex items-center justify-end gap-2 z-20">
+                            <button type="button" onclick="switchToViewMode()" class="px-4 py-1.5 border border-slate-200 rounded-md text-slate-600 hover:bg-slate-50 transition font-medium">Batal</button>
+                            <button type="button" onclick="promptSaveConfirm()" style="background-color: #0E89F9;" class="px-4 py-1.5 text-white rounded-md font-medium hover:opacity-90 transition shadow-sm">Simpan</button>
+                        </div>
+                    </div>
+
+                    <!-- KANAN: PANEL HISTORY -->
+                    <aside id="approval-history-drawer" class="h-full bg-white border-l border-slate-200 flex flex-col overflow-hidden transition-all duration-300 shrink-0" style="width: 0%;">
+                        <div class="h-14 px-6 border-b border-slate-200 flex items-center justify-between bg-white shrink-0">
+                            <span class="text-xs font-semibold text-slate-800">Riwayat approval</span>
+                            <button onclick="toggleApprovalHistoryDrawer()" class="p-2 border border-slate-200 rounded-md text-slate-600 hover:bg-slate-50 transition flex items-center justify-center w-7 h-7">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
+                        </div>
+                        <div class="flex-1 overflow-y-auto p-6 bg-slate-50/50 text-xs space-y-4">
+                            <div id="approval-history-body" class="bg-white border border-slate-200 rounded-xl shadow-xs divide-y divide-slate-100 overflow-hidden">
+                            </div>
+                        </div>
+                    </aside>
+
+                    <aside id="doc-history-drawer" class="h-full bg-white border-l border-slate-200 flex flex-col overflow-hidden transition-all duration-300 shrink-0" style="width: 0%;">
+                        <div class="h-14 px-6 border-b border-slate-200 flex items-center justify-between bg-white shrink-0">
+                            <span class="text-xs font-semibold text-slate-800">Riwayat dokumen</span>
+                            <button onclick="toggleDocHistoryDrawer()" class="p-2 border border-slate-200 rounded-md text-slate-600 hover:bg-slate-50 transition flex items-center justify-center w-7 h-7">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
+                        </div>
+                        <div class="flex-1 overflow-y-auto p-6 bg-slate-50/50 text-xs space-y-4">
+                            <div id="doc-history-body" class="bg-white border border-slate-200 rounded-xl shadow-xs divide-y divide-slate-100 overflow-hidden">
+                            </div>
+                        </div>
+                    </aside>
+
+                </div>
+            </aside>
+        </main>
+
+        <!-- RIGHT: TAMBAH IOM DRAWER OVERLAY -->
+        <aside id="add-drawer" class="absolute top-0 right-0 h-full bg-white border-l border-slate-200 flex flex-col overflow-hidden transition-all duration-300 z-50 shadow-2xl pointer-events-auto" style="width: 0px;">
+            <div class="h-14 px-6 border-b border-slate-200 flex items-center justify-between bg-white shrink-0">
+                <span id="add-drawer-title" class="text-xs font-semibold text-slate-800">Tambah IOM Free alih hak</span>
+                <button type="button" onclick="closeAllDrawers()" class="p-2 border border-slate-200 rounded-md text-slate-600 hover:bg-slate-50 transition flex items-center justify-center w-7 h-7">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-6 space-y-3.5 text-[11px] text-slate-700 bg-white pb-24">
+                <div>
+                    <label id="lbl-add-no" class="block font-medium text-slate-600 mb-1">No IOM free alih hak</label>
+                    <input type="text" id="add-input-no" class="w-full p-2 border border-slate-200 rounded-md bg-white text-slate-800 text-[11px] focus:outline-none focus:ring-1 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label id="lbl-add-nama" class="block font-medium text-slate-600 mb-1">Nama IOM free alih hak</label>
+                    <input type="text" id="add-input-nama" class="w-full p-2 border border-slate-200 rounded-md bg-white text-slate-800 text-[11px] focus:outline-none focus:ring-1 focus:ring-blue-500">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label id="lbl-add-jenis-iom" class="block font-medium text-slate-600 mb-1">Jenis IOM free alih hak</label>
+                        <select id="add-input-jenis" onchange="handleJenisChange()" class="w-full p-2 border border-slate-200 rounded-md bg-white text-slate-800 text-[11px] focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            <option value="GENERAL">GENERAL</option>
+                            <option value="SPECIAL">SPECIAL</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-medium text-slate-600 mb-1">Batas penggunaan</label>
+                        <input type="number" id="add-input-maks" class="w-full p-2 border border-slate-200 rounded-md bg-slate-100 text-slate-800 text-[11px] focus:outline-none" disabled value="0">
+                    </div>
+                </div>
+                <div>
+                    <label id="lbl-add-catatan" class="block font-medium text-slate-600 mb-1">Catatan alih hak</label>
+                    <textarea id="add-input-catatan" rows="5" style="resize: none;" class="w-full p-2 border border-slate-200 rounded-md bg-white text-slate-800 text-[11px] focus:outline-none focus:ring-1 focus:ring-blue-500"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label id="lbl-add-tgl-iom" class="block font-medium text-slate-600 mb-1">Tanggal IOM free alih hak</label>
+                        <input type="date" id="add-input-tgl" onchange="handleTglIOMChange()" class="w-full p-2 border border-slate-200 rounded-md bg-white text-slate-800 text-[11px] focus:outline-none focus:ring-1 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-slate-600 mb-1">Tanggal Berakhir</label>
+                        <input type="date" id="add-input-berakhir" class="w-full p-2 border border-slate-200 rounded-md bg-white text-slate-800 text-[11px] focus:outline-none focus:ring-1 focus:ring-blue-500" value="">
+                    </div>
+                </div>
+                
+                <div id="add-fields-grid" class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label id="lbl-add-field1" class="block font-medium text-slate-600 mb-1">Free alih hak qty</label>
+                        <input type="number" id="add-input-field1" class="w-full p-2 border border-slate-200 rounded-md bg-white text-slate-800 text-[11px] focus:outline-none focus:ring-1 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label id="lbl-add-field2" class="block font-medium text-slate-600 mb-1">Mulai berlaku free alih hak</label>
+                        <div class="flex items-center">
+                            <input type="number" id="add-input-field2" value="12" class="w-full p-2 border border-slate-200 bg-white text-slate-800 text-[11px] focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            <div id="add-field2-addon" class="px-2.5 py-2 bg-slate-100 border border-slate-200 border-l-0 rounded-r-md text-slate-600 font-medium text-[10px] shrink-0 select-none">
+                                Bulan
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-medium text-slate-600 mb-1">Tanggal Memo</label>
+                    <input type="date" id="add-input-memo" class="w-full p-2 border border-slate-200 rounded-md bg-white text-slate-800 text-[11px] focus:outline-none focus:ring-1 focus:ring-blue-500">
+                </div>
+                
+                <div>
+                    <label id="lbl-add-lampiran" class="block font-medium text-slate-600 mb-1">Lampiran file IOM free alih hak</label>
+                    <input type="file" id="hidden-file-input" accept=".pdf" class="hidden" onchange="promptAddFileAction(event)">
+                    
+                    <div id="upload-container" class="border border-slate-200 rounded-xl p-3 bg-white transition relative">
+                        <div id="file-uploaded-view" onclick="triggerFileInput(event)" class="flex items-center justify-between cursor-pointer hover:border-blue-400">
+                            <div class="flex items-center gap-3 overflow-hidden">
+                                <div class="w-8 h-10 bg-slate-100 rounded border border-slate-200 flex flex-col items-center justify-center relative shrink-0 overflow-hidden shadow-xs">
+                                    <div class="absolute top-0 right-0 w-2.5 h-2.5 bg-white border-l border-b border-slate-200 rounded-bl"></div>
+                                    <div class="mt-1 bg-red-500 text-white font-bold text-[6px] px-1 py-0.5 rounded shadow-xs tracking-tighter">PDF</div>
+                                </div>
+                                <div class="truncate">
+                                    <div id="file-name-display" class="text-slate-800 font-medium text-[11px] truncate">-</div>
+                                    <div id="file-size-display" class="text-slate-400 text-[10px]">-</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                <button type="button" onclick="previewFile(event)" class="p-2 border border-slate-200 rounded-lg text-blue-500 hover:bg-blue-50 transition" title="Lihat file">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                </button>
+                                <button type="button" onclick="promptRemoveFile(event)" class="p-2 border border-slate-200 rounded-lg text-rose-500 hover:bg-rose-50 transition" title="Hapus file">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="file-empty-view" onclick="triggerFileInput(event)" class="hidden py-4 border-2 border-dashed border-slate-200 rounded-lg flex flex-col items-center justify-center text-center bg-slate-50/50 cursor-pointer hover:border-blue-400">
+                            <div class="w-8 h-8 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center mb-1.5">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                            </div>
+                            <span class="text-slate-600 text-[11px]">Seret file kesini atau <span class="text-blue-600 font-medium">pilih file</span> dari komputer anda</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-medium text-slate-600 mb-1">Informasi Project</label>
+                    <div class="border border-slate-200 rounded-xl p-4 bg-white space-y-3 shadow-xs">
+                        <div id="project-rows-container" class="space-y-3">
+                        </div>
+                        <button type="button" onclick="addProjectRow('add')" class="w-full py-2.5 border border-dashed border-slate-300 rounded-lg text-blue-600 hover:bg-blue-50/50 font-medium text-xs flex items-center justify-center gap-1.5 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            Informasi Project
+                        </button>
+                    </div>
+                </div>
+
+                <div id="add-rincian-ajb-section" class="hidden space-y-2">
+                    <label class="block font-medium text-slate-600 mb-1">Rincian AJB</label>
+                    <div class="border border-slate-200 rounded-xl p-4 bg-white space-y-3 shadow-xs">
+                        <div class="grid grid-cols-12 gap-2 text-[10px] font-medium text-slate-500 px-1">
+                            <div class="col-span-5">Biaya</div>
+                            <div class="col-span-6">Jumlah</div>
+                            <div class="col-span-1"></div>
+                        </div>
+                        <div id="add-rincian-ajb-rows" class="space-y-2">
+                        </div>
+                        <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+                            <span class="font-medium text-slate-700 text-xs">Total</span>
+                            <div class="flex items-center w-1/2">
+                                <div class="px-2.5 py-1.5 bg-slate-100 border border-slate-200 border-r-0 rounded-l-md text-slate-600 text-[11px] font-medium">Rp</div>
+                                <input type="text" id="add-rincian-total" readonly class="w-full p-1.5 border border-slate-200 rounded-r-md bg-slate-50 text-slate-800 text-[11px] font-semibold text-right focus:outline-none" value="0">
+                            </div>
+                        </div>
+                        <button type="button" id="add-btn-add-rincian" onclick="addRincianAjbRow('add')" class="text-blue-600 hover:text-blue-700 font-medium text-xs flex items-center gap-1 transition pt-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            Rincian biaya
+                        </button>
+                    </div>
+                </div>
+
+                <div class="absolute bottom-0 right-0 left-0 bg-white border-t border-slate-200 px-6 py-3 flex items-center justify-end gap-2 z-20">
+                    <button type="button" onclick="closeAllDrawers()" class="px-4 py-1.5 border border-slate-200 rounded-md text-slate-600 hover:bg-slate-50 transition font-medium">Batal</button>
+                    <button type="button" onclick="submitNewIOM()" style="background-color: #0E89F9;" class="px-4 py-1.5 text-white rounded-md font-medium hover:opacity-90 transition shadow-sm">Simpan</button>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- MODAL PILIH TANGGAL BERAKHIR SEBELUM NONAKTIF -->
+    <div id="end-date-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-left relative animate-in fade-in zoom-in duration-200">
+            <button onclick="closeEndDateModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+            <h3 class="text-slate-800 text-sm font-semibold mb-2">Tentukan Tanggal Berakhir</h3>
+            <p class="text-slate-600 text-xs mb-4">Pilih tanggal berakhir untuk menonaktifkan IOM ini.</p>
+            
+            <div class="mb-4">
+                <label class="block text-slate-700 text-xs font-medium mb-1.5">Tanggal Berakhir</label>
+                <input type="date" id="input-custom-end-date" class="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="closeEndDateModal()" class="py-2.5 px-4 border border-slate-300 rounded-xl text-slate-700 font-medium hover:bg-slate-50 transition text-xs text-center bg-white">Batal</button>
+                <button onclick="submitEndDateSelection()" style="background-color: #0E89F9;" class="py-2.5 px-4 text-white rounded-xl font-medium hover:opacity-90 transition shadow-sm text-xs text-center">Lanjutkan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- POPUP KONFIRMASI STATUS -->
+    <div id="status-confirm-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center relative animate-in fade-in zoom-in duration-200">
+            <button onclick="closeConfirmStatusModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+            <div class="flex justify-center mb-4">
+                <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center text-[#0E89F9] relative">
+                    <svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    <div id="modal-badge-icon" class="absolute bottom-0 right-0 w-6 h-6 bg-rose-500 rounded-full flex items-center justify-center text-white shadow-md text-[10px]">
+                        ✕
+                    </div>
+                </div>
+            </div>
+            <h3 class="text-slate-800 text-sm font-semibold mb-2">Konfirmasi Status</h3>
+            <p id="modal-confirm-text" class="text-slate-600 text-xs mb-6 px-2">Apakah kamu yakin ingin menonaktifkan IOM ini?</p>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="closeConfirmStatusModal()" class="py-2.5 px-4 border border-slate-300 rounded-xl text-slate-700 font-medium hover:bg-slate-50 transition text-xs">Batal</button>
+                <button onclick="executeToggleStatus()" style="background-color: #0E89F9;" class="py-2.5 px-4 text-white rounded-xl font-medium hover:opacity-90 transition shadow-sm text-xs">Ya</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- POPUP KONFIRMASI UMUM (SUBMIT & SIMPAN) -->
+    <div id="general-confirm-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center relative animate-in fade-in zoom-in duration-200">
+            <button onclick="closeGeneralConfirmModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+            <div class="flex justify-center mb-4">
+                <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center text-[#0E89F9]">
+                    <svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                </div>
+            </div>
+            <h3 id="general-modal-title" class="text-slate-800 text-sm font-semibold mb-2">Konfirmasi Aksi</h3>
+            <p id="general-modal-text" class="text-slate-600 text-xs mb-6 px-2">Apakah kamu yakin?</p>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="closeGeneralConfirmModal()" class="py-2.5 px-4 border border-slate-300 rounded-xl text-slate-700 font-medium hover:bg-slate-50 transition text-xs">Batal</button>
+                <button id="general-modal-submit-btn" onclick="executeGeneralAction()" style="background-color: #0E89F9;" class="py-2.5 px-4 text-white rounded-xl font-medium hover:opacity-90 transition shadow-sm text-xs">Ya</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- POPUP KONFIRMASI FILE (UPLOAD/REUPLOAD/HAPUS) -->
+    <div id="file-confirm-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center relative animate-in fade-in zoom-in duration-200">
+            <button onclick="closeFileConfirmModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+            <div class="flex justify-center mb-4">
+                <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center text-blue-500">
+                    <svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+                </div>
+            </div>
+            <h3 id="file-modal-title" class="text-slate-800 text-sm font-semibold mb-2">Konfirmasi File</h3>
+            <p id="file-modal-text" class="text-slate-600 text-xs mb-6 px-2">Apakah kamu yakin?</p>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="closeFileConfirmModal()" class="py-2.5 px-4 border border-slate-300 rounded-xl text-slate-700 font-medium hover:bg-slate-50 transition text-xs">Batal</button>
+                <button id="file-confirm-submit-btn" onclick="executeFileAction()" style="background-color: #0E89F9;" class="py-2.5 px-4 text-white rounded-xl font-medium hover:opacity-90 transition shadow-sm text-xs">Ya</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- POPUP KONFIRMASI APPROVAL -->
+    <div id="approval-confirm-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center relative animate-in fade-in zoom-in duration-200">
+            <button onclick="closeApprovalConfirmModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+            <div class="flex justify-center mb-4">
+                <div id="approval-modal-icon-container" class="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center text-[#16A34A]">
+                    <svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                </div>
+            </div>
+            <h3 id="approval-modal-title" class="text-slate-800 text-sm font-semibold mb-2">Konfirmasi Approval</h3>
+            <p id="approval-modal-text" class="text-slate-600 text-xs mb-4">Apakah kamu yakin ingin menyetujui IOM ini?</p>
+            
+            <div class="mb-4 text-left">
+                <label class="block text-slate-700 text-xs font-medium mb-1.5">Catatan / Alasan <span class="text-rose-500">*</span></label>
+                <textarea id="approval-note-input" rows="3" placeholder="Masukkan catatan atau alasan..." class="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500" style="resize: none;"></textarea>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="closeApprovalConfirmModal()" class="py-2.5 px-4 border border-slate-300 rounded-xl text-slate-700 font-medium hover:bg-slate-50 transition text-xs text-center bg-white">Batal</button>
+                <button id="approval-submit-btn" onclick="executeApprovalAction()" class="py-2.5 px-4 text-white rounded-xl font-medium hover:opacity-90 transition shadow-sm text-xs text-center">Ya</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTIFIKASI TOAST -->
+    <div id="alert-toast" class="hidden fixed bottom-5 right-5 bg-slate-800 text-white px-4 py-2 rounded-md shadow-lg text-xs z-50 transition-all">
+        <span id="toast-text">Berhasil memperbarui data!</span>
+    </div>
+
+    <script>
+        const projectSubProjectData = {
+            "PIK2 - PANTAI INDAH KAPUK 2": [
+                { code: "ARC", name: "ARCADIA" },
+                { code: "KD15", name: "DISTRICT 15" },
+                { code: "OLS", name: "OLD SHANGHAI" },
+                { code: "KYTO", name: "TOWER KYOTO" },
+                { code: "SOB1", name: "SOHO ORCHARD BOULEVARD 2" }
+            ],
+            "GI - GOLF ISLAND": [
+                { code: "TMS2", name: "THE MOZART SIGNATURE 2" },
+                { code: "MEG", name: "MELODY GOLF" },
+                { code: "PIA", name: "THE PIANO" },
+                { code: "RBB", name: "RUKAN THE BEACH" },
+                { code: "ORB", name: "ORCHESTRA BEACH" }
+            ],
+            "RWI - RIVERWALK ISLAND": [
+                { code: "SP04", name: "SP04" },
+                { code: "TA1", name: "TOWER ARECA" },
+                { code: "EBR", name: "EBONY RESIDENCE" },
+                { code: "RWA", name: "RIVERWALK AVENUE" },
+                { code: "RKLB", name: "RUKAN LITTLE BANGKOK" }
+            ]
+        };
+
+        const ajbBiayaOptions = [
+            { name: "BIAYA BPHTB", defaultAmount: 1000000 },
+            { name: "BIAYA BALIK NAMA PBB", defaultAmount: 1000000 },
+            { name: "BIAYA PNBP", defaultAmount: 300000 },
+            { name: "BIAYA AJB DAN BALIK NAMA SERTIFIKAT", defaultAmount: 100000 },
+            { name: "BIAYA REKOMENDASI", defaultAmount: 100000 },
+            { name: "BIAYA VALIDASI", defaultAmount: 500000 },
+            { name: "BIAYA PEMBAGIAN ZONA", defaultAmount: 500000 }
+        ];
+
+        const genres = ['GENERAL', 'SPECIAL'];
+        const creators = ['BERNARDUS ZAGOTO', 'SUTRINI', 'HENGKY SETIAWAN', 'FERRY SUSILO', 'CESARIA HALIM', 'HASAN BASRI'];
+        
+        const docPrefixes = ['001/PFAH/DLC/I/', '012/PFAH/VI/', '206/SIC-PK2/', '221/MEM/VIII/', '011/PFAH/GR/IX/', '003/G3A-IM/IX/'];
+        const memoNamesPool = [
+            'RCBB-077, RCBB-078, RCBB-079',
+            'MEMO ALIH HAK PER TGL 26 JULI 2023',
+            '206/SIC-PK2/MKT/XI/22ST',
+            '221/MEM/VIII/2015/MKT-PMA',
+            'FPFAH GR08-25B',
+            'FREE ALIH HAK 1X - SWP-455',
+            'MEMO FREE SERVICE CHARGE 2 TAHUN TGL 14 SEPTEMBER 2026',
+            'FPFAH GR05-21B',
+            'ABC IOM 20JT'
+        ];
+
+        const rawDates = [
+            new Date(2019, 0, 3), new Date(2019, 9, 28), new Date(2022, 9, 3),
+            new Date(2022, 10, 30), new Date(2023, 6, 26), new Date(2025, 1, 14),
+            new Date(2025, 1, 23), new Date(2025, 7, 21), new Date(2026, 1, 8),
+            new Date(2026, 3, 19), new Date(2026, 7, 18), new Date(2026, 8, 14)
+        ];
+
+        let uploadedFileObject = null;
+        let editUploadedFileObject = null;
+        let pendingApprovalActionType = null;
+        let isApprovalHistoryOpen = false;
+        let isDocHistoryOpen = false;
+        let currentApprovalFilter = 'ALL';
+        let pendingFileActionData = null;
+        let tempEndDateVal = '';
+        let pendingGeneralActionType = null;
+
+        function getDefaultAjbDetails() {
+            return ajbBiayaOptions.map(opt => ({ biaya: opt.name, jumlah: opt.defaultAmount }));
+        }
+
+        function getIOMDetails(type, index) {
+            if (type === 'IPL') {
+                return {
+                    maks: '2', hasField1: true, label1: 'Free IPL qty', field1: '24', hasField2: true, label2: 'Tarif/bulan', field2: '1500000',
+                    lampiran: `COI.FIPL.GLC.${index}.pdf`,
+                    catatan: 'INCLUDE FREE IPL SELAMA 2 TAHUN UTK UNIT KOMERSIAL',
+                    projectName: 'PIK2 - PANTAI INDAH KAPUK 2', subProjects: ['ARCADIA']
+                };
+            } else if (type === 'AJB') {
+                return {
+                    maks: '1', hasField1: false, label1: '', field1: '', hasField2: false, label2: '', field2: '',
+                    lampiran: `COI.FAJB.GLC.${index}.pdf`,
+                    catatan: 'INCLUDE FREE BIAYA AJB SESUAI KETENTUAN BERLAKU',
+                    projectName: 'PIK2 - PANTAI INDAH KAPUK 2', subProjects: ['ARCADIA'],
+                    rincianAjb: getDefaultAjbDetails()
+                };
+            } else {
+                return {
+                    maks: '3', hasField1: true, label1: 'Free alih hak qty', field1: '1', hasField2: true, label2: 'Mulai berlaku free alih hak', field2: '12',
+                    lampiran: `COI.FPFAH.GLC.AH.${index}.pdf`,
+                    catatan: 'INCLUDE 1X BIAYA ADMINISTRASI ALIH HAK SEBELUM AJB DILUAR KEBIJAKAN PEMERINTAH',
+                    projectName: 'PIK2 - PANTAI INDAH KAPUK 2', subProjects: ['ARCADIA']
+                };
+            }
+        }
+
+        let seed = 1337;
+        function seededRandom() {
+            seed = (seed * 9301 + 49297) % 233280;
+            return seed / 233280;
+        }
+
+        let masterRows = [];
+        let activeRowIndex = null;
+        let currentAddType = 'ALIH HAK';
+        
+        const dummyPattern = [
+            { tipe: 'ALIH HAK', status: 'ACTIVE', approval: 'APPROVED' },
+            { tipe: 'IPL', status: 'ACTIVE', approval: 'APPROVED' },
+            { tipe: 'AJB', status: 'ACTIVE', approval: 'APPROVED' },
+            { tipe: 'ALIH HAK', status: 'INACTIVE', approval: 'APPROVED' },
+            { tipe: 'IPL', status: 'INACTIVE', approval: 'APPROVED' },
+            { tipe: 'AJB', status: 'INACTIVE', approval: 'APPROVED' },
+            { tipe: 'ALIH HAK', status: '-', approval: 'REJECTED' },
+            { tipe: 'IPL', status: '-', approval: 'REJECTED' },
+            { tipe: 'AJB', status: '-', approval: 'REJECTED' },
+            { tipe: 'ALIH HAK', status: '-', approval: 'WAITING FOR APPROVAL' },
+            { tipe: 'IPL', status: '-', approval: 'WAITING FOR APPROVAL' },
+            { tipe: 'AJB', status: '-', approval: 'WAITING FOR APPROVAL' },
+            { tipe: 'ALIH HAK', status: '-', approval: 'DRAFT' },
+            { tipe: 'IPL', status: '-', approval: 'DRAFT' },
+            { tipe: 'AJB', status: '-', approval: 'DRAFT' }
+        ];
+
+        for (let i = 1; i <= 45; i++) {
+            let randomDateObj = rawDates[Math.floor(seededRandom() * rawDates.length)];
+            let formattedDate = randomDateObj.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            let numericDate = randomDateObj.toISOString().split('T')[0];
+
+            let prefix = docPrefixes[Math.floor(seededRandom() * docPrefixes.length)];
+            let memoNo = `${prefix}${randomDateObj.getFullYear()}-${i}`;
+            let memoName = memoNamesPool[Math.floor(seededRandom() * memoNamesPool.length)];
+
+            let randGenre = genres[Math.floor(seededRandom() * genres.length)];
+            let maksVal = randGenre === 'GENERAL' ? '0' : String(Math.floor(seededRandom() * 5) + 1);
+            let randCreator = creators[Math.floor(seededRandom() * creators.length)];
+            
+            let patternIndex = (i - 1) % dummyPattern.length;
+            let currentPattern = dummyPattern[patternIndex];
+            
+            let randType = currentPattern.tipe;
+            let randStatus = currentPattern.status;
+            let randApproval = currentPattern.approval;
+
+            let customDetails = getIOMDetails(randType, i);
+
+            let defaultHistory = [];
+            let timeStr = "14 Sep 2026 13:00";
+            if (randApproval === 'WAITING FOR APPROVAL' || randApproval === 'APPROVED' || randApproval === 'REJECTED') {
+                defaultHistory.push({ action: 'Submit', user: randCreator, time: timeStr, note: '' });
+            }
+            if (randApproval === 'APPROVED') {
+                defaultHistory.push({ action: 'Approved', user: 'AHMAD FAUZI', time: "14 Sep 2026 13:10", note: 'Dokumen telah lengkap dan sesuai.' });
+            } else if (randApproval === 'REJECTED') {
+                defaultHistory.push({ action: 'Rejected', user: 'AHMAD FAUZI', time: "14 Sep 2026 13:10", note: 'Mohon lampirkan revisi dokumen pendukung.' });
+            }
+
+            let defaultDocHistory = [
+                { action: 'Upload', user: 'bernardus.zagoto@agungsedayu.com', time: '08 Oct 2026 09:37', fileName: customDetails.lampiran }
+            ];
+
+            masterRows.push({
+                no: memoNo, dateObj: randomDateObj, tgl: formattedDate, numericTgl: numericDate,
+                berakhirDate: '', berakhir: '-', nama: memoName, tipe: randType, jenis: randGenre,
+                berlaku: formattedDate, status: randStatus, approval: randApproval,
+                creator: randCreator, ...customDetails, maks: maksVal, history: defaultHistory, docHistory: defaultDocHistory
+            });
+        }
+
+        let filteredRows = [...masterRows];
+        let currentPage = 1;
+        const pageSize = 15;
+        let sortDirection = {};
+
+        function toggleFilterDropdown(e) {
+            if (e) e.stopPropagation();
+            document.getElementById('add-modal').classList.add('hidden');
+            document.getElementById('filter-dropdown').classList.toggle('hidden');
+        }
+
+        function toggleAddModal(e) {
+            if (e) e.stopPropagation();
+            document.getElementById('filter-dropdown').classList.add('hidden');
+            document.getElementById('add-modal').classList.toggle('hidden');
+        }
+
+        function toggleApprovalHistoryDrawer() {
+            isApprovalHistoryOpen = !isApprovalHistoryOpen;
+            if (isApprovalHistoryOpen) isDocHistoryOpen = false;
+            updateDrawerWidths();
+            if (isApprovalHistoryOpen) {
+                renderApprovalHistoryContent();
+            }
+        }
+
+        function toggleDocHistoryDrawer() {
+            isDocHistoryOpen = !isDocHistoryOpen;
+            if (isDocHistoryOpen) isApprovalHistoryOpen = false;
+            updateDrawerWidths();
+            if (isDocHistoryOpen) {
+                renderDocHistoryContent();
+            }
+        }
+
+        function updateDrawerWidths() {
+            const containerWrapper = document.getElementById('drawer-container-wrapper');
+            const historyDrawer = document.getElementById('approval-history-drawer');
+            const docHistoryDrawer = document.getElementById('doc-history-drawer');
+
+            let isDetailOpen = containerWrapper.style.width !== '0px' && containerWrapper.style.width !== '';
+
+            if (isDetailOpen) {
+                let isEditMode = !document.getElementById('drawer-body-edit').classList.contains('hidden');
+                if (isEditMode) {
+                    containerWrapper.style.width = '50vw';
+                    historyDrawer.style.width = '0%';
+                    docHistoryDrawer.style.width = '0%';
+                    return;
+                }
+
+                if (isApprovalHistoryOpen || isDocHistoryOpen) {
+                    containerWrapper.style.width = '85vw';
+                    if (isApprovalHistoryOpen) {
+                        historyDrawer.style.width = '35%';
+                        docHistoryDrawer.style.width = '0%';
+                    } else {
+                        historyDrawer.style.width = '0%';
+                        docHistoryDrawer.style.width = '35%';
+                    }
+                } else {
+                    containerWrapper.style.width = '50vw';
+                    historyDrawer.style.width = '0%';
+                    docHistoryDrawer.style.width = '0%';
+                }
+            } else {
+                containerWrapper.style.width = '0px';
+                historyDrawer.style.width = '0%';
+                docHistoryDrawer.style.width = '0%';
+            }
+        }
+
+        function renderApprovalHistoryContent() {
+            const container = document.getElementById('approval-history-body');
+            container.innerHTML = '';
+            let row = masterRows[activeRowIndex];
+
+            if (!row.history || row.history.length === 0) {
+                container.innerHTML = `<div class="text-center py-8 text-slate-400 font-medium">Belum ada riwayat approval</div>`;
+                return;
+            }
+
+            let sortedHistory = [...row.history].reverse();
+
+            sortedHistory.forEach((item) => {
+                let isApproved = item.action === 'Approved';
+                let isRejected = item.action === 'Rejected';
+                
+                let iconBg = 'bg-blue-500 text-white';
+                let iconSvg = `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+                
+                if (isApproved) {
+                    iconBg = 'bg-[#16A34A] text-white';
+                } else if (isRejected) {
+                    iconBg = 'bg-[#DC2626] text-white';
+                    iconSvg = `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+                } else {
+                    iconSvg = `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>`;
+                }
+
+                let itemDiv = document.createElement('div');
+                itemDiv.className = 'p-4 space-y-2 bg-white';
+                
+                let noteHtml = item.note ? `
+                    <div class="mt-2 p-2.5 bg-slate-50 border border-slate-100 rounded-lg text-slate-600 text-[11px] leading-relaxed">
+                        <span class="font-medium text-slate-700">Notes:</span> ${item.note}
+                    </div>
+                ` : '';
+
+                itemDiv.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="w-6 h-6 rounded-full ${iconBg} flex items-center justify-center shrink-0 shadow-xs">
+                                ${iconSvg}
+                            </div>
+                            <span class="font-semibold text-slate-800 text-xs">${item.action}</span>
+                        </div>
+                    </div>
+                    <div class="text-[10px] text-slate-400 pl-8">
+                        ${item.time} • by ${item.user}
+                    </div>
+                    ${noteHtml ? `<div class="pl-8">${noteHtml}</div>` : ''}
+                `;
+                container.appendChild(itemDiv);
+            });
+        }
+
+        function renderDocHistoryContent() {
+            const container = document.getElementById('doc-history-body');
+            container.innerHTML = '';
+            let row = masterRows[activeRowIndex];
+
+            let validDocHistory = (row.docHistory || []).filter(item => item.fileName && item.fileName !== '-');
+
+            if (validDocHistory.length === 0) {
+                container.innerHTML = `<div class="text-center py-8 text-slate-400 font-medium">Belum ada riwayat dokumen</div>`;
+                return;
+            }
+
+            let sortedDocHistory = [...validDocHistory].reverse();
+
+            sortedDocHistory.forEach((item) => {
+                let isInactive = item.action === 'Upload (Inactive)';
+                let iconBg = isInactive ? 'bg-[#94A3B8] text-white' : 'bg-[#0E89F9] text-white';
+                
+                let iconSvg = isInactive ? `
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                    </svg>
+                ` : `
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                `;
+
+                let itemDiv = document.createElement('div');
+                itemDiv.className = 'p-4 space-y-2 bg-white';
+
+                itemDiv.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="w-6 h-6 rounded-full ${iconBg} flex items-center justify-center shrink-0 shadow-xs">
+                                ${iconSvg}
+                            </div>
+                            <span class="font-semibold text-slate-800 text-xs">${item.action}</span>
+                        </div>
+                    </div>
+                    <div class="text-[10px] text-slate-400 pl-8">
+                        ${item.time} • by ${item.user}
+                    </div>
+                    <div class="pl-8">
+                        <div class="mt-2 p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-blue-600 text-[11px] truncate">
+                            ${item.fileName}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(itemDiv);
+            });
+        }
+
+        function openAddDrawer(type) {
+            currentAddType = type;
+            document.getElementById('add-modal').classList.add('hidden');
+            isApprovalHistoryOpen = false;
+            isDocHistoryOpen = false;
+            updateDrawerWidths();
+            
+            let labelName = (type === 'IPL') ? 'IPL' : (type === 'AJB' ? 'biaya AJB' : 'alih hak');
+
+            document.getElementById('add-drawer-title').innerText = `Tambah IOM Free ${labelName}`;
+            document.getElementById('lbl-add-no').innerText = `No IOM free ${labelName}`;
+            document.getElementById('lbl-add-nama').innerText = `Nama IOM free ${labelName}`;
+            document.getElementById('lbl-add-jenis-iom').innerText = `Jenis IOM free ${labelName}`;
+            document.getElementById('lbl-add-catatan').innerText = `Catatan ${labelName}`;
+            document.getElementById('lbl-add-tgl-iom').innerText = `Tanggal IOM free ${labelName}`;
+
+            const fieldsGrid = document.getElementById('add-fields-grid');
+            const rincianAjbSection = document.getElementById('add-rincian-ajb-section');
+            const labelF1 = document.getElementById('lbl-add-field1');
+            const labelF2 = document.getElementById('lbl-add-field2');
+            const inputF1 = document.getElementById('add-input-field1');
+            const inputF2 = document.getElementById('add-input-field2');
+            const addonF2 = document.getElementById('add-field2-addon');
+
+            if (type === 'AJB') {
+                fieldsGrid.classList.add('hidden');
+                rincianAjbSection.classList.remove('hidden');
+                initRincianAjbRows('add', getDefaultAjbDetails());
+            } else {
+                fieldsGrid.classList.remove('hidden');
+                rincianAjbSection.classList.add('hidden');
+                
+                if (type === 'IPL') {
+                    labelF1.innerText = 'Free IPL qty';
+                    labelF2.innerText = 'Tarif/bulan';
+                    inputF1.value = '24';
+                    inputF2.value = '1500000';
+                    addonF2.innerText = 'Rp';
+                    addonF2.className = 'px-2.5 py-2 bg-slate-100 border border-slate-200 border-l-0 rounded-l-md text-slate-600 font-medium text-[10px] shrink-0 select-none order-first';
+                    inputF2.classList.remove('rounded-l-md', 'rounded-r-md');
+                    inputF2.classList.add('rounded-r-md');
+                } else {
+                    labelF1.innerText = 'Free alih hak qty';
+                    labelF2.innerText = 'Mulai berlaku free alih hak';
+                    inputF1.value = '1';
+                    inputF2.value = '12';
+                    addonF2.innerText = 'Bulan';
+                    addonF2.className = 'px-2.5 py-2 bg-slate-100 border border-slate-200 border-l-0 rounded-r-md text-slate-600 font-medium text-[10px] shrink-0 select-none';
+                    inputF2.classList.remove('rounded-l-md', 'rounded-r-md');
+                    inputF2.classList.add('rounded-l-md');
+                }
+            }
+
+            document.getElementById('lbl-add-lampiran').innerText = `Lampiran file IOM free ${labelName}`;
+
+            document.getElementById('add-input-jenis').value = 'GENERAL';
+            handleJenisChange();
+
+            if (type === 'IPL') {
+                document.getElementById('add-input-no').value = '046/FIPL/MKT-GLC/IX/2026';
+                document.getElementById('add-input-nama').value = 'MEMO FREE IPL 2 TAHUN KAVLING COMMERCIAL ARCADIA';
+                document.getElementById('add-input-catatan').value = 'BEBAS BIAYA IPL SELAMA 2 TAHUN KEPEMILIKAN KHUSUS UNIT COMMERCIAL ARCADIA.';
+            } else if (type === 'AJB') {
+                document.getElementById('add-input-no').value = '047/FAJB/MKT-GLC/IX/2026';
+                document.getElementById('add-input-nama').value = 'MEMO FREE BIAYA AJB KAVLING COMMERCIAL ARCADIA';
+                document.getElementById('add-input-catatan').value = 'BEBAS BIAYA AKTA JUAL BELI (AJB) KEPEMILIKAN KHUSUS UNIT COMMERCIAL ARCADIA.';
+            } else {
+                document.getElementById('add-input-no').value = '045/PFAH/MKT-GLC/IX/2026';
+                document.getElementById('add-input-nama').value = 'MEMO FREE ALIH HAK 1X KAVLING COMMERCIAL ARCADIA';
+                document.getElementById('add-input-catatan').value = 'BEBAS BIAYA ADMINISTRASI ALIH HAK KEPEMILIKAN KHUSUS UNIT COMMERCIAL ARCADIA.';
+            }
+            
+            let defaultDate = '2026-09-14';
+            document.getElementById('add-input-tgl').value = defaultDate;
+            document.getElementById('add-input-memo').value = defaultDate;
+            document.getElementById('add-input-berakhir').value = '';
+
+            uploadedFileObject = {
+                name: `SADFDD26011 - Validasi Penjualan (${type}).pdf`,
+                size: '614.3 KB'
+            };
+            updateFileUI();
+            initProjectRows('add', 'PIK2 - PANTAI INDAH KAPUK 2', ['ARCADIA']);
+
+            const drawer = document.getElementById('add-drawer');
+            const containerWrapper = document.getElementById('drawer-container-wrapper');
+            const backdrop = document.getElementById('drawer-backdrop');
+
+            containerWrapper.style.width = '0px';
+            drawer.style.width = '50vw';
+            backdrop.classList.remove('opacity-0', 'pointer-events-none');
+            backdrop.classList.add('opacity-100');
+        }
+
+        function initRincianAjbRows(mode, items) {
+            const containerId = mode === 'add' ? 'add-rincian-ajb-rows' : 'edit-rincian-ajb-rows';
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            
+            if (!items || items.length === 0) {
+                items = getDefaultAjbDetails();
+            }
+
+            items.forEach((item) => {
+                appendRincianAjbRow(mode, item.biaya, item.jumlah);
+            });
+            updateRincianAjbTotal(mode);
+            checkRincianAjbButton(mode);
+        }
+
+        function appendRincianAjbRow(mode, selectedBiaya = "", amountVal = "") {
+            const containerId = mode === 'add' ? 'add-rincian-ajb-rows' : 'edit-rincian-ajb-rows';
+            const container = document.getElementById(containerId);
+            const rowId = 'ajb-row-' + Math.random().toString(36).substring(2, 9);
+
+            let rowDiv = document.createElement('div');
+            rowDiv.className = 'grid grid-cols-12 gap-2 items-center ajb-row-item';
+            rowDiv.id = rowId;
+
+            let optionsHtml = `<option value="">Pilih Biaya</option>`;
+            ajbBiayaOptions.forEach(opt => {
+                let selected = (opt.name === selectedBiaya) ? 'selected' : '';
+                optionsHtml += `<option value="${opt.name}" ${selected}>${opt.name}</option>`;
+            });
+
+            let isApproved = false;
+            if (activeRowIndex !== null && mode === 'edit' && masterRows[activeRowIndex].approval === 'APPROVED') {
+                isApproved = true;
+            }
+
+            let disabledClass = isApproved ? 'bg-slate-100 cursor-not-allowed text-slate-500' : 'bg-white text-slate-800';
+            let disabledAttr = isApproved ? 'disabled' : '';
+
+            rowDiv.innerHTML = `
+                <div class="col-span-5">
+                    <select ${disabledAttr} onchange="handleAjbBiayaChange(this, '${mode}')" class="ajb-biaya-select w-full p-1.5 border border-slate-200 rounded-md ${disabledClass} text-[11px] focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        ${optionsHtml}
+                    </select>
+                </div>
+                <div class="col-span-6 flex items-center">
+                    <div class="px-2 py-1.5 bg-slate-100 border border-slate-200 border-r-0 rounded-l-md text-slate-600 text-[10px] font-medium">Rp</div>
+                    <input ${disabledAttr} type="number" oninput="updateRincianAjbTotal('${mode}')" class="ajb-jumlah-input w-full p-1.5 border border-slate-200 rounded-r-md ${disabledClass} text-[11px] focus:outline-none focus:ring-1 focus:ring-blue-500" value="${amountVal}">
+                </div>
+                <div class="col-span-1 flex justify-center">
+                    <button type="button" onclick="removeRincianAjbRow(this, '${mode}')" class="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition" title="Hapus baris" ${isApproved ? 'style="display:none;"' : ''}>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                    </button>
+                </div>
+            `;
+            container.appendChild(rowDiv);
+            updateRincianAjbTotal(mode);
+            checkRincianAjbButton(mode);
+        }
+
+        function addRincianAjbRow(mode) {
+            const containerId = mode === 'add' ? 'add-rincian-ajb-rows' : 'edit-rincian-ajb-rows';
+            const container = document.getElementById(containerId);
+            if (container.children.length < ajbBiayaOptions.length) {
+                appendRincianAjbRow(mode, "", "");
+            }
+        }
+
+        function removeRincianAjbRow(btn, mode) {
+            btn.closest('.ajb-row-item').remove();
+            updateRincianAjbTotal(mode);
+            checkRincianAjbButton(mode);
+        }
+
+        function handleAjbBiayaChange(selectElem, mode) {
+            let val = selectElem.value;
+            let found = ajbBiayaOptions.find(o => o.name === val);
+            let row = selectElem.closest('.ajb-row-item');
+            let inputJumlah = row.querySelector('.ajb-jumlah-input');
+            if (found) {
+                inputJumlah.value = found.defaultAmount;
+            } else {
+                inputJumlah.value = '';
+            }
+            updateRincianAjbTotal(mode);
+        }
+
+        function updateRincianAjbTotal(mode) {
+            const containerId = mode === 'add' ? 'add-rincian-ajb-rows' : 'edit-rincian-ajb-rows';
+            const totalId = mode === 'add' ? 'add-rincian-total' : 'edit-rincian-total';
+            const container = document.getElementById(containerId);
+            let total = 0;
+            container.querySelectorAll('.ajb-jumlah-input').forEach(inp => {
+                total += Number(inp.value) || 0;
+            });
+            document.getElementById(totalId).value = total.toLocaleString('id-ID');
+        }
+
+        function checkRincianAjbButton(mode) {
+            const containerId = mode === 'add' ? 'add-rincian-ajb-rows' : 'edit-rincian-ajb-rows';
+            const btnId = mode === 'add' ? 'add-btn-add-rincian' : 'edit-btn-add-rincian';
+            const container = document.getElementById(containerId);
+            const btn = document.getElementById(btnId);
+            
+            let isApproved = false;
+            if (activeRowIndex !== null && mode === 'edit' && masterRows[activeRowIndex].approval === 'APPROVED') {
+                isApproved = true;
+            }
+
+            if (container.children.length >= ajbBiayaOptions.length || isApproved) {
+                btn.classList.add('hidden');
+            } else {
+                btn.classList.remove('hidden');
+            }
+        }
+
+        function initProjectRows(mode, preselectedProject = "", preselectedSubs = []) {
+            const containerId = mode === 'add' ? 'project-rows-container' : 'edit-project-rows-container';
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            appendProjectRow(mode, preselectedProject, preselectedSubs);
+        }
+
+        function appendProjectRow(mode, selectedProj = "", selectedSubs = []) {
+            const containerId = mode === 'add' ? 'project-rows-container' : 'edit-project-rows-container';
+            const container = document.getElementById(containerId);
+            
+            const rowId = 'proj-row-' + Math.random().toString(36).substring(2, 9);
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'space-y-3 relative pb-2';
+            rowDiv.id = rowId;
+
+            let projectOptionsHtml = `<option value="">Pilih Project</option>`;
+            for (let projName in projectSubProjectData) {
+                let selected = (projName === selectedProj) ? 'selected' : '';
+                projectOptionsHtml += `<option value="${projName}" ${selected}>${projName}</option>`;
+            }
+
+            let isApproved = false;
+            if (activeRowIndex !== null && mode === 'edit' && masterRows[activeRowIndex].approval === 'APPROVED') {
+                isApproved = true;
+            }
+
+            let disabledClass = isApproved ? 'bg-slate-100 cursor-not-allowed text-slate-500' : 'bg-white text-slate-800';
+            let toggleDisabledClass = isApproved ? 'bg-slate-100 cursor-not-allowed text-slate-500' : 'bg-slate-50 text-slate-400';
+            let disabledAttr = isApproved ? 'disabled' : '';
+
+            rowDiv.innerHTML = `
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1 text-[11px]">Project</label>
+                        <select ${disabledAttr} onchange="handleProjectChange('${rowId}', '${mode}')" class="project-select w-full p-2 border border-slate-200 rounded-md ${disabledClass} text-[11px] focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            ${projectOptionsHtml}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1 text-[11px]">Sub Project</label>
+                        <div class="flex items-center gap-2">
+                            <div class="flex-1 relative">
+                                <div onclick="toggleSubProjectDropdown('${rowId}')" class="subproject-toggle-btn w-full p-2 border border-slate-200 rounded-md ${toggleDisabledClass} text-[11px] cursor-pointer truncate flex items-center justify-between select-none">
+                                    <span class="subproject-label">Pilih Sub Project</span>
+                                    <svg class="w-3 h-3 text-slate-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                </div>
+                                <div class="dropdown-checkbox-content p-2 space-y-1.5" id="dropdown-${rowId}">
+                                    <div class="flex items-center justify-between pb-1.5 border-b border-slate-100 px-1">
+                                        <label class="flex items-center gap-1.5 text-[10px] font-medium text-blue-600 cursor-pointer">
+                                            <input ${disabledAttr} type="checkbox" onchange="toggleSelectAllSubProjects('${rowId}', this)" class="select-all-chk rounded border-slate-300"> Pilih Semua
+                                        </label>
+                                        <span class="text-[10px] text-slate-400 cursor-pointer hover:text-slate-600" onclick="toggleSubProjectDropdown('${rowId}')">Tutup</span>
+                                    </div>
+                                    <div class="subproject-checkbox-list space-y-1 pt-1"></div>
+                                </div>
+                            </div>
+                            <button type="button" onclick="removeProjectRow(this, '${mode}')" class="delete-row-btn p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition shrink-0 self-center ${isApproved ? 'hidden' : ''}" title="Hapus baris">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(rowDiv);
+
+            if (selectedProj) {
+                updateSubProjectCheckboxes(rowId, selectedProj, selectedSubs);
+            }
+        }
+
+        function handleProjectChange(rowId, mode) {
+            const row = document.getElementById(rowId);
+            const projSelect = row.querySelector('.project-select');
+            const selectedProj = projSelect.value;
+            updateSubProjectCheckboxes(rowId, selectedProj, []);
+        }
+
+        function updateSubProjectCheckboxes(rowId, projName, preselectedSubs = []) {
+            const row = document.getElementById(rowId);
+            const toggleBtn = row.querySelector('.subproject-toggle-btn');
+            const listContainer = row.querySelector('.subproject-checkbox-list');
+            listContainer.innerHTML = '';
+
+            let isApproved = false;
+            if (activeRowIndex !== null && masterRows[activeRowIndex].approval === 'APPROVED') {
+                isApproved = true;
+            }
+
+            if (!projName || !projectSubProjectData[projName]) {
+                toggleBtn.classList.add('bg-slate-50', 'text-slate-400');
+                toggleBtn.classList.remove('bg-white', 'text-slate-800');
+                row.querySelector('.subproject-label').innerText = 'Pilih Sub Project dulu';
+                return;
+            }
+
+            toggleBtn.classList.remove('bg-slate-50', 'text-slate-400');
+            toggleBtn.classList.add(isApproved ? 'bg-slate-100' : 'bg-white', isApproved ? 'text-slate-500' : 'text-slate-800');
+
+            projectSubProjectData[projName].forEach(sub => {
+                let isChecked = preselectedSubs.includes(sub.name) ? 'checked' : '';
+                let div = document.createElement('label');
+                div.className = 'flex items-center gap-2 px-1 py-1 hover:bg-slate-50 rounded cursor-pointer text-[11px]';
+                div.innerHTML = `
+                    <input ${isApproved ? 'disabled' : ''} type="checkbox" value="${sub.name}" ${isChecked} onchange="updateSubProjectLabel('${rowId}')" class="sub-chk rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                    <span class="text-slate-700">${sub.code} - ${sub.name}</span>
+                `;
+                listContainer.appendChild(div);
+            });
+            updateSubProjectLabel(rowId);
+        }
+
+        function toggleSubProjectDropdown(rowId) {
+            const row = document.getElementById(rowId);
+            const projSelect = row.querySelector('.project-select');
+            if (projSelect.disabled) return;
+            if (!projSelect.value) {
+                alert('Silakan pilih Project terlebih dahulu.');
+                return;
+            }
+            const dropdown = document.getElementById(`dropdown-${rowId}`);
+            document.querySelectorAll('.dropdown-checkbox-content').forEach(d => {
+                if (d.id !== `dropdown-${rowId}`) d.classList.remove('show');
+            });
+            dropdown.classList.toggle('show');
+        }
+
+        function toggleSelectAllSubProjects(rowId, masterCheckbox) {
+            const row = document.getElementById(rowId);
+            row.querySelectorAll('.sub-chk').forEach(chk => {
+                chk.checked = masterCheckbox.checked;
+            });
+            updateSubProjectLabel(rowId);
+        }
+
+        function updateSubProjectLabel(rowId) {
+            const row = document.getElementById(rowId);
+            const checkedBoxes = row.querySelectorAll('.sub-chk:checked');
+            const labelSpan = row.querySelector('.subproject-label');
+            
+            if (checkedBoxes.length === 0) {
+                labelSpan.innerText = 'Pilih Sub Project';
+            } else if (checkedBoxes.length === 1) {
+                labelSpan.innerText = checkedBoxes[0].value;
+            } else {
+                labelSpan.innerText = `${checkedBoxes.length} Sub Project dipilih`;
+            }
+        }
+
+        function addProjectRow(mode) {
+            appendProjectRow(mode, "", []);
+        }
+
+        function addEditProjectRow() {
+            appendProjectRow('edit', "", []);
+        }
+
+        function removeProjectRow(btn, mode) {
+            const containerId = mode === 'add' ? 'project-rows-container' : 'edit-project-rows-container';
+            const container = document.getElementById(containerId);
+            if (container.children.length > 1) {
+                btn.closest('.space-y-3').remove();
+            } else {
+                alert('Minimal harus ada 1 informasi project.');
+            }
+        }
+
+        window.addEventListener('click', function(e) {
+            if (!e.target.closest('.subproject-toggle-btn') && !e.target.closest('.dropdown-checkbox-content')) {
+                document.querySelectorAll('.dropdown-checkbox-content').forEach(d => d.classList.remove('show'));
+            }
+        });
+
+        function triggerFileInput(event) {
+            if (event.target.closest('button')) return;
+            document.getElementById('hidden-file-input').click();
+        }
+
+        function promptAddFileAction(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            let actionType = uploadedFileObject ? 'reupload' : 'upload';
+            pendingFileActionData = { mode: 'add', type: actionType, file: file };
+
+            const modalTitle = document.getElementById('file-modal-title');
+            const modalText = document.getElementById('file-modal-text');
+
+            if (actionType === 'reupload') {
+                modalTitle.innerText = 'Konfirmasi Ganti File';
+                modalText.innerText = `Apakah kamu yakin ingin mengganti file lampiran dengan "${file.name}"?`;
+            } else {
+                modalTitle.innerText = 'Konfirmasi Upload File';
+                modalText.innerText = `Apakah kamu yakin ingin mengunggah file "${file.name}"?`;
+            }
+            document.getElementById('file-confirm-modal').classList.remove('hidden');
+        }
+
+        function promptRemoveFile(event) {
+            event.stopPropagation();
+            if (!uploadedFileObject) return;
+
+            pendingFileActionData = { mode: 'add', type: 'remove', file: null };
+            document.getElementById('file-modal-title').innerText = 'Konfirmasi Hapus File';
+            document.getElementById('file-modal-text').innerText = 'Apakah kamu yakin ingin menghapus lampiran file ini?';
+            document.getElementById('file-confirm-modal').classList.remove('hidden');
+        }
+
+        function triggerEditFileInput(event) {
+            if (event.target.closest('button')) return;
+            document.getElementById('edit-hidden-file-input').click();
+        }
+
+        function promptEditFileAction(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            let actionType = editUploadedFileObject ? 'reupload' : 'upload';
+            pendingFileActionData = { mode: 'edit', type: actionType, file: file };
+
+            const modalTitle = document.getElementById('file-modal-title');
+            const modalText = document.getElementById('file-modal-text');
+
+            if (actionType === 'reupload') {
+                modalTitle.innerText = 'Konfirmasi Ganti File';
+                modalText.innerText = `Apakah kamu yakin ingin mengganti file lampiran dengan "${file.name}"?`;
+            } else {
+                modalTitle.innerText = 'Konfirmasi Upload File';
+                modalText.innerText = `Apakah kamu yakin ingin mengunggah file "${file.name}"?`;
+            }
+            document.getElementById('file-confirm-modal').classList.remove('hidden');
+        }
+
+        function promptRemoveEditFile(event) {
+            event.stopPropagation();
+            if (!editUploadedFileObject) return;
+
+            pendingFileActionData = { mode: 'edit', type: 'remove', file: null };
+            document.getElementById('file-modal-title').innerText = 'Konfirmasi Hapus File';
+            document.getElementById('file-modal-text').innerText = 'Apakah kamu yakin ingin menghapus lampiran file ini?';
+            document.getElementById('file-confirm-modal').classList.remove('hidden');
+        }
+
+        function closeFileConfirmModal() {
+            document.getElementById('file-confirm-modal').classList.add('hidden');
+            pendingFileActionData = null;
+            document.getElementById('hidden-file-input').value = '';
+            document.getElementById('edit-hidden-file-input').value = '';
+        }
+
+        function executeFileAction() {
+            if (!pendingFileActionData) return;
+            let { mode, type, file } = pendingFileActionData;
+            closeFileConfirmModal();
+
+            if (mode === 'add') {
+                if (type === 'remove') {
+                    uploadedFileObject = null;
+                    document.getElementById('hidden-file-input').value = '';
+                    updateFileUI();
+                } else if (file) {
+                    let sizeKB = (file.size / 1024).toFixed(1) + ' KB';
+                    uploadedFileObject = { name: file.name, size: sizeKB };
+                    updateFileUI();
+                }
+            } else if (mode === 'edit') {
+                if (type === 'remove') {
+                    let oldFileName = editUploadedFileObject ? editUploadedFileObject.name : '';
+                    editUploadedFileObject = null;
+                    document.getElementById('edit-hidden-file-input').value = '';
+                    updateEditFileUI();
+
+                    if (activeRowIndex !== null && oldFileName) {
+                        let row = masterRows[activeRowIndex];
+                        if (!row.docHistory) row.docHistory = [];
+                        let nowStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+                        row.docHistory.push({
+                            action: 'Upload (Inactive)',
+                            user: 'bernardus.zagoto@agungsedayu.com',
+                            time: nowStr,
+                            fileName: oldFileName
+                        });
+                    }
+                } else if (file) {
+                    let sizeKB = (file.size / 1024).toFixed(1) + ' KB';
+                    let oldFileName = editUploadedFileObject ? editUploadedFileObject.name : '';
+                    
+                    editUploadedFileObject = { name: file.name, size: sizeKB };
+                    updateEditFileUI();
+
+                    if (activeRowIndex !== null && oldFileName && oldFileName !== file.name) {
+                        let row = masterRows[activeRowIndex];
+                        if (!row.docHistory) row.docHistory = [];
+                        let nowStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+                        
+                        row.docHistory.push({
+                            action: 'Upload (Inactive)',
+                            user: 'bernardus.zagoto@agungsedayu.com',
+                            time: nowStr,
+                            fileName: oldFileName
+                        });
+                    }
+                }
+            }
+        }
+
+        function updateFileUI() {
+            const uploadedView = document.getElementById('file-uploaded-view');
+            const emptyView = document.getElementById('file-empty-view');
+            if (uploadedFileObject) {
+                uploadedView.classList.remove('hidden');
+                emptyView.classList.add('hidden');
+                document.getElementById('file-name-display').innerText = uploadedFileObject.name;
+                document.getElementById('file-size-display').innerText = uploadedFileObject.size;
+            } else {
+                uploadedView.classList.add('hidden');
+                emptyView.classList.remove('hidden');
+            }
+        }
+
+        function updateEditFileUI() {
+            const uploadedView = document.getElementById('edit-file-uploaded-view');
+            const emptyView = document.getElementById('edit-file-empty-view');
+            if (editUploadedFileObject) {
+                uploadedView.classList.remove('hidden');
+                emptyView.classList.add('hidden');
+                document.getElementById('edit-file-name-display').innerText = editUploadedFileObject.name;
+                document.getElementById('edit-file-size-display').innerText = editUploadedFileObject.size;
+            } else {
+                uploadedView.classList.add('hidden');
+                emptyView.classList.remove('hidden');
+            }
+        }
+
+        function previewFile(event) {
+            event.stopPropagation();
+            window.open('about:blank', '_blank');
+        }
+
+        function previewEditFile(event) {
+            event.stopPropagation();
+            window.open('about:blank', '_blank');
+        }
+
+        function handleTglIOMChange() {
+            const tglIOM = document.getElementById('add-input-tgl').value;
+            document.getElementById('add-input-memo').value = tglIOM;
+        }
+
+        function handleJenisChange() {
+            const jenisVal = document.getElementById('add-input-jenis').value;
+            const maksInput = document.getElementById('add-input-maks');
+            if (jenisVal === 'GENERAL') {
+                maksInput.value = '0';
+                maksInput.disabled = true;
+                maksInput.classList.add('bg-slate-100');
+            } else {
+                maksInput.disabled = false;
+                maksInput.classList.remove('bg-slate-100');
+                maksInput.value = '0';
+            }
+        }
+
+        function handleEditTglIOMChange() {
+            const tglIOM = document.getElementById('input-tgl').value;
+            document.getElementById('input-memo-date').value = tglIOM;
+        }
+
+        function handleEditJenisChange() {
+            let row = activeRowIndex !== null ? masterRows[activeRowIndex] : null;
+            let isApproved = row && row.approval === 'APPROVED';
+            if (isApproved) return;
+
+            const jenisVal = document.getElementById('input-jenis').value;
+            const maksInput = document.getElementById('input-maks');
+            if (jenisVal === 'GENERAL') {
+                maksInput.value = '0';
+                maksInput.disabled = true;
+                maksInput.classList.add('bg-slate-100');
+            } else {
+                maksInput.disabled = false;
+                maksInput.classList.remove('bg-slate-100');
+            }
+        }
+
+        function closeAllDrawers() {
+            isApprovalHistoryOpen = false;
+            isDocHistoryOpen = false;
+            updateDrawerWidths();
+            document.getElementById('drawer-container-wrapper').style.width = '0px';
+            document.getElementById('add-drawer').style.width = '0px';
+            const backdrop = document.getElementById('drawer-backdrop');
+            backdrop.classList.remove('opacity-100');
+            backdrop.classList.add('opacity-0', 'pointer-events-none');
+        }
+
+        function submitNewIOM() {
+            let no = document.getElementById('add-input-no').value;
+            let nama = document.getElementById('add-input-nama').value;
+            let jenis = document.getElementById('add-input-jenis').value;
+            let maks = document.getElementById('add-input-maks').value;
+            let catatan = document.getElementById('add-input-catatan').value;
+            let tglVal = document.getElementById('add-input-tgl').value;
+            let tglFormatted = tglVal ? new Date(tglVal).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-';
+            let field1 = document.getElementById('add-input-field1') ? document.getElementById('add-input-field1').value : '';
+            let field2 = document.getElementById('add-input-field2') ? document.getElementById('add-input-field2').value : '';
+            let berakhirVal = document.getElementById('add-input-berakhir').value;
+            let berakhirFormatted = berakhirVal ? new Date(berakhirVal).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-';
+
+            let firstRow = document.getElementById('project-rows-container').children[0];
+            let projName = firstRow ? firstRow.querySelector('.project-select').value : 'PIK2 - PANTAI INDAH KAPUK 2';
+            let subChecked = [];
+            if (firstRow) {
+                firstRow.querySelectorAll('.sub-chk:checked').forEach(chk => subChecked.push(chk.value));
+            }
+            if (subChecked.length === 0) subChecked = ['ARCADIA'];
+
+            let rincianList = [];
+            if (currentAddType === 'AJB') {
+                document.querySelectorAll('#add-rincian-ajb-rows .ajb-row-item').forEach(row => {
+                    let biaya = row.querySelector('.ajb-biaya-select').value;
+                    let jumlah = Number(row.querySelector('.ajb-jumlah-input').value) || 0;
+                    if (biaya) rincianList.push({ biaya, jumlah });
+                });
+            }
+
+            let labelName = (currentAddType === 'IPL') ? 'IPL' : (currentAddType === 'AJB' ? 'biaya AJB' : 'alih hak');
+            let hasF1 = currentAddType !== 'AJB';
+            let hasF2 = currentAddType !== 'AJB';
+            let fileName = uploadedFileObject ? uploadedFileObject.name : '-';
+
+            let initialDocHistory = fileName !== '-' ? [
+                { action: 'Upload', user: 'bernardus.zagoto@agungsedayu.com', time: '08 Oct 2026 09:37', fileName: fileName }
+            ] : [];
+
+            let newRow = {
+                no: no, dateObj: tglVal ? new Date(tglVal) : new Date(), tgl: tglFormatted, numericTgl: tglVal,
+                berakhirDate: berakhirVal, berakhir: berakhirFormatted, nama: nama, tipe: currentAddType, jenis: jenis,
+                berlaku: tglFormatted, status: 'DRAFT', approval: 'DRAFT',
+                creator: 'BERNARDUS ZAGOTO', maks: maks, hasField1: hasF1, label1: `Free ${labelName} qty`,
+                field1: field1, hasField2: hasF2, label2: (currentAddType === 'IPL' ? 'Tarif/bulan' : `Mulai berlaku free ${labelName}`), field2: field2,
+                lampiran: fileName, catatan: catatan,
+                projectName: projName, subProjects: subChecked, rincianAjb: rincianList,
+                history: [], docHistory: initialDocHistory
+            };
+
+            masterRows.unshift(newRow);
+            filteredRows = [...masterRows];
+            renderTable();
+            closeAllDrawers();
+        }
+
+        function copyDrawerCode() {
+            let codeText = document.getElementById('drawer-title-code').innerText;
+            navigator.clipboard.writeText(codeText).then(() => {
+                const toast = document.getElementById('alert-toast');
+                document.getElementById('toast-text').innerText = `Kode ${codeText} berhasil disalin!`;
+                toast.classList.remove('hidden');
+                setTimeout(() => { toast.classList.add('hidden'); }, 2500);
+            });
+        }
+
+        function openPdfTab(event) {
+            event.preventDefault();
+            window.open('about:blank', '_blank');
+        }
+
+        function openDetailDrawer(row, globalIdx) {
+            activeRowIndex = masterRows.indexOf(row);
+            isApprovalHistoryOpen = false;
+            isDocHistoryOpen = false;
+            
+            document.getElementById('drawer-title-code').innerText = row.no;
+            document.getElementById('det-nama').innerText = row.nama;
+            document.getElementById('det-tipe').innerText = row.tipe;
+            document.getElementById('det-jenis').innerText = row.jenis;
+            document.getElementById('det-maks').innerText = row.maks;
+            
+            let formattedTglIOM = '-';
+            if (row.numericTgl) {
+                let startFormatted = new Date(row.numericTgl).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                if (row.berakhirDate) {
+                    let endFormatted = new Date(row.berakhirDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                    formattedTglIOM = `${startFormatted} - ${endFormatted}`;
+                } else {
+                    formattedTglIOM = `${startFormatted} - -`;
+                }
+            }
+            document.getElementById('det-tgl').innerText = formattedTglIOM;
+            document.getElementById('det-memo-date').innerText = row.numericTgl ? new Date(row.numericTgl).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-';
+            
+            const rowF1 = document.getElementById('det-row-field1');
+            const rowF2 = document.getElementById('det-row-field2');
+            const detRincianAjbSec = document.getElementById('det-rincian-ajb-section');
+
+            if (row.tipe === 'AJB') {
+                rowF1.classList.add('hidden');
+                rowF2.classList.add('hidden');
+                detRincianAjbSec.classList.remove('hidden');
+                
+                const tbody = document.getElementById('det-rincian-ajb-tbody');
+                tbody.innerHTML = '';
+                let list = row.rincianAjb || getDefaultAjbDetails();
+                let grandTotal = 0;
+                list.forEach(item => {
+                    grandTotal += Number(item.jumlah) || 0;
+                    let tr = document.createElement('tr');
+                    tr.className = 'hover:bg-slate-50 transition';
+                    tr.innerHTML = `
+                        <td class="py-2.5 px-3 text-slate-800 lowercase">${item.biaya}</td>
+                        <td class="py-2.5 px-3 text-right text-slate-800">Rp. &nbsp;${(Number(item.jumlah) || 0).toLocaleString('id-ID')}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                let totalTr = document.createElement('tr');
+                totalTr.className = 'bg-slate-50/50 font-semibold';
+                totalTr.innerHTML = `
+                    <td class="py-2.5 px-3 text-slate-800">Total</td>
+                    <td class="py-2.5 px-3 text-right text-slate-800">Rp. &nbsp;${grandTotal.toLocaleString('id-ID')}</td>
+                `;
+                tbody.appendChild(totalTr);
+
+            } else {
+                rowF1.classList.remove('hidden');
+                rowF2.classList.remove('hidden');
+                detRincianAjbSec.classList.add('hidden');
+                let labelName = (row.tipe === 'IPL') ? 'IPL' : 'alih hak';
+                document.getElementById('label-maks').innerText = 'Maks pemakaian IOM';
+                document.getElementById('label-field-1').innerText = `Free ${labelName} qty`;
+                document.getElementById('label-field-2').innerText = row.tipe === 'IPL' ? 'Tarif/bulan' : `Mulai berlaku free ${labelName}`;
+
+                if (row.tipe === 'IPL') {
+                    document.getElementById('det-qy').innerText = row.field1;
+                    let numVal = Number(row.field2) || 0;
+                    document.getElementById('det-mulai').innerText = 'Rp ' + numVal.toLocaleString('id-ID');
+                } else {
+                    document.getElementById('det-qy').innerText = row.field1;
+                    document.getElementById('det-mulai').innerText = row.field2;
+                }
+            }
+
+            document.getElementById('det-lampiran').innerText = row.lampiran || '-';
+            document.getElementById('det-catatan').innerText = row.catatan;
+
+            const projBox = document.querySelector('#drawer-body-view .border.border-slate-200.rounded-lg');
+            let subProjText = (row.subProjects || []).join(', ');
+            projBox.innerHTML = `
+                <div class="grid grid-cols-2 border-b border-slate-200 bg-slate-50 px-3.5 py-2">
+                    <div class="flex items-center gap-1.5 text-slate-600 font-normal text-[11px]">
+                        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                        <span>Project</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 text-slate-600 font-normal text-[11px] pl-3.5 border-l border-slate-200">
+                        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                        <span>Sub project</span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 px-3.5 py-2.5 bg-white text-[11px]">
+                    <div class="text-slate-800 font-normal uppercase">${row.projectName || 'PANTAI INDAH KAPUK 2'}</div>
+                    <div class="text-slate-800 font-normal uppercase pl-3.5 border-l border-slate-100">${subProjText || 'ARCADIA'}</div>
+                </div>
+            `;
+
+            renderStatusUI(row);
+            switchToViewMode();
+
+            const containerWrapper = document.getElementById('drawer-container-wrapper');
+            const addDrawer = document.getElementById('add-drawer');
+            const backdrop = document.getElementById('drawer-backdrop');
+
+            addDrawer.style.width = '0px';
+            containerWrapper.style.width = '50vw';
+            backdrop.classList.remove('opacity-0', 'pointer-events-none');
+            backdrop.classList.add('opacity-100');
+            updateDrawerWidths();
+        }
+
+        function renderStatusUI(row) {
+            const statusContainer = document.getElementById('det-status-container');
+            const approvalContainer = document.getElementById('det-approval-container');
+            const btnToggle = document.getElementById('btn-toggle-status');
+            const btnEdit = document.getElementById('btn-edit-drawer');
+            const footerActions = document.getElementById('drawer-footer-actions');
+
+            if (row.approval === 'APPROVED') {
+                if (row.status === 'ACTIVE') {
+                    statusContainer.innerHTML = `<span class="inline-flex items-center justify-center w-40 py-0.5 rounded text-[10px] font-medium bg-[#D4F4DC] text-[#0F7A31] border border-[#86efac]">ACTIVE</span>`;
+                } else {
+                    statusContainer.innerHTML = `<span class="inline-flex items-center justify-center w-40 py-0.5 rounded text-[10px] font-medium bg-[#94A3B8] text-white border border-[#64748b]">INACTIVE</span>`;
+                }
+            } else {
+                // Draft status utama menggunakan warna #EAEAEA dengan teks #555555
+                statusContainer.innerHTML = `<span class="inline-flex items-center justify-center w-40 py-0.5 rounded text-[10px] font-semibold bg-[#EAEAEA] text-[#555555] border border-[#d1d5db]">DRAFT</span>`;
+            }
+
+            approvalContainer.innerHTML = getDetailApprovalBadge(row.approval);
+
+            footerActions.innerHTML = '';
+
+            if (row.approval === 'DRAFT') {
+                btnEdit.classList.remove('hidden');
+                btnToggle.classList.add('hidden');
+                footerActions.innerHTML = `
+                    <button onclick="promptSubmitDraft()" style="background-color: #0E89F9;" class="px-4 py-1.5 text-white rounded-md font-medium hover:opacity-90 transition shadow-sm text-xs">Submit</button>
+                `;
+            } else if (row.approval === 'WAITING FOR APPROVAL') {
+                btnEdit.classList.add('hidden');
+                btnToggle.classList.add('hidden');
+                footerActions.innerHTML = `
+                    <button onclick="openApprovalConfirmModal('REJECT')" class="px-4 py-1.5 bg-[#DC2626] text-white rounded-md font-medium hover:opacity-90 transition shadow-sm text-xs">Reject</button>
+                    <button onclick="openApprovalConfirmModal('APPROVE')" class="px-4 py-1.5 bg-[#16A34A] text-white rounded-md font-medium hover:opacity-90 transition shadow-sm text-xs">Approve</button>
+                `;
+            } else if (row.approval === 'APPROVED') {
+                btnEdit.classList.remove('hidden');
+                btnToggle.classList.remove('hidden');
+                if (row.status === 'ACTIVE') {
+                    btnToggle.innerHTML = `<svg class="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg> Nonaktifkan`;
+                } else {
+                    btnToggle.innerHTML = `<svg class="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg> Aktifkan`;
+                }
+            } else if (row.approval === 'REJECTED') {
+                btnEdit.classList.add('hidden');
+                btnToggle.classList.add('hidden');
+            }
+        }
+
+        function promptSubmitDraft() {
+            pendingGeneralActionType = 'SUBMIT_DRAFT';
+            document.getElementById('general-modal-title').innerText = 'Konfirmasi Submit IOM';
+            document.getElementById('general-modal-text').innerText = 'Apakah kamu yakin ingin submit IOM draft ini untuk approval?';
+            document.getElementById('general-confirm-modal').classList.remove('hidden');
+        }
+
+        function promptSaveConfirm() {
+            pendingGeneralActionType = 'SAVE_EDIT';
+            document.getElementById('general-modal-title').innerText = 'Konfirmasi Simpan Perubahan';
+            document.getElementById('general-modal-text').innerText = 'Apakah kamu yakin ingin menyimpan perubahan pada IOM ini?';
+            document.getElementById('general-confirm-modal').classList.remove('hidden');
+        }
+
+        function closeGeneralConfirmModal() {
+            document.getElementById('general-confirm-modal').classList.add('hidden');
+            pendingGeneralActionType = null;
+        }
+
+        function executeGeneralAction() {
+            let action = pendingGeneralActionType;
+            closeGeneralConfirmModal();
+
+            if (action === 'SUBMIT_DRAFT') {
+                let row = masterRows[activeRowIndex];
+                row.approval = 'WAITING FOR APPROVAL';
+                row.status = 'DRAFT';
+                
+                if (!row.history) row.history = [];
+                row.history.push({
+                    action: 'Submit',
+                    user: row.creator || 'BERNARDUS ZAGOTO',
+                    time: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+                    note: ''
+                });
+
+                renderTable();
+                closeAllDrawers();
+            } else if (action === 'SAVE_EDIT') {
+                saveChanges();
+            }
+        }
+
+        function openApprovalConfirmModal(type) {
+            pendingApprovalActionType = type;
+            const titleEl = document.getElementById('approval-modal-title');
+            const textEl = document.getElementById('approval-modal-text');
+            const submitBtn = document.getElementById('approval-submit-btn');
+            const iconContainer = document.getElementById('approval-modal-icon-container');
+            document.getElementById('approval-note-input').value = '';
+
+            if (type === 'APPROVE') {
+                titleEl.innerText = 'Konfirmasi Menyetujui IOM';
+                textEl.innerText = 'Apakah kamu yakin ingin menyetujui IOM ini?';
+                submitBtn.style.backgroundColor = '#16A34A';
+                iconContainer.className = 'w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center text-[#16A34A]';
+                iconContainer.innerHTML = `<svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`;
+            } else {
+                titleEl.innerText = 'Konfirmasi Menolak IOM';
+                textEl.innerText = 'Apakah kamu yakin ingin menolak IOM ini?';
+                submitBtn.style.backgroundColor = '#DC2626';
+                iconContainer.className = 'w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center text-[#DC2626]';
+                iconContainer.innerHTML = `<svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`;
+            }
+            document.getElementById('approval-confirm-modal').classList.remove('hidden');
+        }
+
+        function closeApprovalConfirmModal() {
+            document.getElementById('approval-confirm-modal').classList.add('hidden');
+        }
+
+        function executeApprovalAction() {
+            let noteVal = document.getElementById('approval-note-input').value.trim();
+            if (!noteVal) {
+                alert('Catatan / alasan wajib diisi!');
+                return;
+            }
+
+            closeApprovalConfirmModal();
+            let row = masterRows[activeRowIndex];
+            let actionName = pendingApprovalActionType === 'APPROVE' ? 'Approved' : 'Rejected';
+
+            if (pendingApprovalActionType === 'APPROVE') {
+                row.approval = 'APPROVED';
+                row.status = 'ACTIVE';
+            } else {
+                row.approval = 'REJECTED';
+                row.status = '-';
+            }
+
+            if (!row.history) row.history = [];
+            row.history.push({
+                action: actionName,
+                user: 'AHMAD FAUZI',
+                time: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+                note: noteVal
+            });
+
+            renderTable();
+            closeAllDrawers();
+        }
+
+        function openEndDateModal() {
+            let row = masterRows[activeRowIndex];
+            if (row.approval !== 'APPROVED') return;
+
+            if (row.status === 'ACTIVE') {
+                document.getElementById('input-custom-end-date').value = new Date().toISOString().split('T')[0];
+                document.getElementById('end-date-modal').classList.remove('hidden');
+            } else {
+                openConfirmStatusModal();
+            }
+        }
+
+        function closeEndDateModal() {
+            document.getElementById('end-date-modal').classList.add('hidden');
+        }
+
+        function submitEndDateSelection() {
+            let dateVal = document.getElementById('input-custom-end-date').value;
+            if (!dateVal) {
+                alert('Silakan pilih tanggal berakhir terlebih dahulu.');
+                return;
+            }
+            tempEndDateVal = dateVal;
+            closeEndDateModal();
+            openConfirmStatusModal();
+        }
+
+        function openConfirmStatusModal() {
+            let row = masterRows[activeRowIndex];
+            if (row.approval !== 'APPROVED') return;
+
+            const modalText = document.getElementById('modal-confirm-text');
+            const modalBadge = document.getElementById('modal-badge-icon');
+
+            if (row.status === 'ACTIVE') {
+                modalText.innerText = 'Apakah kamu yakin ingin menonaktifkan IOM ini?';
+                modalBadge.className = 'absolute bottom-0 right-0 w-6 h-6 bg-rose-500 rounded-full flex items-center justify-center text-white shadow-md text-[10px]';
+                modalBadge.innerHTML = '✕';
+            } else {
+                modalText.innerText = 'Apakah kamu yakin ingin mengaktifkan IOM ini?';
+                modalBadge.className = 'absolute bottom-0 right-0 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center text-white shadow-md text-[10px]';
+                modalBadge.innerHTML = '✓';
+            }
+            document.getElementById('status-confirm-modal').classList.remove('hidden');
+        }
+
+        function closeConfirmStatusModal() {
+            document.getElementById('status-confirm-modal').classList.add('hidden');
+        }
+
+        function executeToggleStatus() {
+            let row = masterRows[activeRowIndex];
+            if (row.status === 'ACTIVE') {
+                row.status = 'INACTIVE';
+                if (tempEndDateVal) {
+                    row.berakhirDate = tempEndDateVal;
+                    row.berakhir = new Date(tempEndDateVal).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                }
+            } else {
+                row.status = 'ACTIVE';
+            }
+            renderStatusUI(row);
+            renderTable();
+            closeConfirmStatusModal();
+            closeAllDrawers();
+        }
+
+        function switchToEditMode() {
+            let row = masterRows[activeRowIndex];
+            let labelName = (row.tipe === 'IPL') ? 'IPL' : (row.tipe === 'AJB' ? 'biaya AJB' : 'alih hak');
+
+            document.getElementById('edit-drawer-title').innerText = `Ubah IOM Free ${labelName}`;
+            document.getElementById('edit-label-no').innerText = `No IOM free ${labelName}`;
+            document.getElementById('edit-label-nama').innerText = `Nama IOM free ${labelName}`;
+            document.getElementById('edit-label-jenis-iom').innerText = `Jenis IOM free ${labelName}`;
+            document.getElementById('edit-label-catatan').innerText = `Catatan ${labelName}`;
+            document.getElementById('edit-label-tgl-iom').innerText = `Tanggal IOM free ${labelName}`;
+
+            const fieldsGrid = document.getElementById('edit-fields-grid');
+            const editRincianAjbSec = document.getElementById('edit-rincian-ajb-section');
+            const labelField1 = document.getElementById('edit-label-field1');
+            const labelField2 = document.getElementById('edit-label-field2');
+            const addonField2 = document.getElementById('edit-field2-addon');
+
+            if (row.tipe === 'AJB') {
+                fieldsGrid.classList.add('hidden');
+                editRincianAjbSec.classList.remove('hidden');
+                initRincianAjbRows('edit', row.rincianAjb || getDefaultAjbDetails());
+            } else {
+                fieldsGrid.classList.remove('hidden');
+                editRincianAjbSec.classList.add('hidden');
+                
+                if (row.tipe === 'IPL') {
+                    labelField1.innerText = 'Free IPL qty';
+                    labelField2.innerText = 'Tarif/bulan';
+                    addonField2.innerText = 'Rp';
+                    addonField2.className = 'px-2.5 py-2 bg-slate-100 border border-slate-200 border-l-0 rounded-l-md text-slate-600 font-medium text-[10px] shrink-0 select-none order-first';
+                    document.getElementById('input-field2').classList.remove('rounded-l-md', 'rounded-r-md');
+                    document.getElementById('input-field2').classList.add('rounded-r-md');
+                } else {
+                    labelField1.innerText = 'Free alih hak qty';
+                    labelField2.innerText = 'Mulai berlaku free alih hak';
+                    addonField2.innerText = 'Bulan';
+                    addonField2.className = 'px-2.5 py-2 bg-slate-100 border border-slate-200 border-l-0 rounded-r-md text-slate-600 font-medium text-[10px] shrink-0 select-none';
+                    document.getElementById('input-field2').classList.remove('rounded-l-md', 'rounded-r-md');
+                    document.getElementById('input-field2').classList.add('rounded-r-md');
+                }
+            }
+
+            document.getElementById('edit-label-lampiran').innerText = `Lampiran file IOM free ${labelName}`;
+
+            document.getElementById('input-no').value = row.no;
+            document.getElementById('input-nama').value = row.nama;
+            document.getElementById('input-jenis').value = row.jenis;
+            document.getElementById('input-maks').value = row.maks;
+            document.getElementById('input-catatan').value = row.catatan;
+            document.getElementById('input-tgl').value = row.numericTgl || '';
+            document.getElementById('input-memo-date').value = row.numericTgl || '';
+            document.getElementById('input-berakhir').value = row.berakhirDate || '';
+            
+            if (row.tipe !== 'AJB') {
+                document.getElementById('input-field1').value = row.field1;
+                document.getElementById('input-field2').value = row.field2;
+            }
+
+            handleEditJenisChange();
+
+            if (row.lampiran && row.lampiran !== '-') {
+                editUploadedFileObject = { name: row.lampiran, size: '614.3 KB' };
+            } else {
+                editUploadedFileObject = null;
+            }
+            updateEditFileUI();
+            initProjectRows('edit', row.projectName, row.subProjects);
+
+            const inputElements = [
+                'input-no', 'input-nama', 'input-jenis', 'input-maks', 
+                'input-catatan', 'input-tgl', 'input-berakhir', 
+                'input-field1', 'input-field2', 'input-memo-date'
+            ];
+
+            const isApproved = (row.approval === 'APPROVED');
+
+            inputElements.forEach(id => {
+                let el = document.getElementById(id);
+                if (el) {
+                    el.disabled = isApproved;
+                    if (isApproved) {
+                        el.classList.add('bg-slate-100', 'cursor-not-allowed', 'text-slate-500');
+                        el.classList.remove('bg-white', 'text-slate-800');
+                    } else {
+                        el.classList.remove('bg-slate-100', 'cursor-not-allowed', 'text-slate-500');
+                        el.classList.add('bg-white', 'text-slate-800');
+                    }
+                }
+            });
+
+            const editRincianRows = document.querySelectorAll('#edit-rincian-ajb-rows .ajb-row-item');
+            editRincianRows.forEach(r => {
+                let sel = r.querySelector('.ajb-biaya-select');
+                let inp = r.querySelector('.ajb-jumlah-input');
+                let delBtn = r.querySelector('button');
+                if (sel) {
+                    sel.disabled = isApproved;
+                    if (isApproved) {
+                        sel.classList.add('bg-slate-100', 'cursor-not-allowed', 'text-slate-500');
+                        sel.classList.remove('bg-white', 'text-slate-800');
+                    } else {
+                        sel.classList.remove('bg-slate-100', 'cursor-not-allowed', 'text-slate-500');
+                        sel.classList.add('bg-white', 'text-slate-800');
+                    }
+                }
+                if (inp) {
+                    inp.disabled = isApproved;
+                    if (isApproved) {
+                        inp.classList.add('bg-slate-100', 'cursor-not-allowed', 'text-slate-500');
+                        inp.classList.remove('bg-white', 'text-slate-800');
+                    } else {
+                        inp.classList.remove('bg-slate-100', 'cursor-not-allowed', 'text-slate-500');
+                        inp.classList.add('bg-white', 'text-slate-800');
+                    }
+                }
+                if (delBtn) delBtn.style.display = isApproved ? 'none' : 'block';
+            });
+            const btnAddRincian = document.getElementById('edit-btn-add-rincian');
+            if (btnAddRincian) btnAddRincian.style.display = isApproved ? 'none' : 'block';
+
+            const editProjContainer = document.getElementById('edit-project-rows-container');
+            if (editProjContainer) {
+                editProjContainer.querySelectorAll('.project-select, .subproject-toggle-btn').forEach(elem => {
+                    if (isApproved) {
+                        elem.disabled = true;
+                        elem.classList.add('bg-slate-100', 'cursor-not-allowed', 'text-slate-500');
+                        elem.classList.remove('bg-white', 'text-slate-800');
+                    } else {
+                        elem.disabled = false;
+                        elem.classList.remove('bg-slate-100', 'cursor-not-allowed', 'text-slate-500');
+                        elem.classList.add('bg-white', 'text-slate-800');
+                    }
+                });
+                editProjContainer.querySelectorAll('.delete-row-btn, #edit-btn-add-project-row').forEach(btn => {
+                    if (isApproved) {
+                        btn.classList.add('hidden');
+                    } else {
+                        btn.classList.remove('hidden');
+                    }
+                });
+            }
+
+            document.getElementById('drawer-header-view').classList.add('hidden');
+            document.getElementById('drawer-header-edit').classList.remove('hidden');
+            document.getElementById('drawer-body-view').classList.add('hidden');
+            document.getElementById('drawer-body-edit').classList.remove('hidden');
+            document.getElementById('drawer-footer-actions').classList.add('hidden');
+            document.getElementById('edit-sticky-footer').classList.remove('hidden');
+
+            isApprovalHistoryOpen = false;
+            isDocHistoryOpen = false;
+            updateDrawerWidths();
+        }
+
+        function switchToViewMode() {
+            document.getElementById('drawer-header-edit').classList.add('hidden');
+            document.getElementById('drawer-header-view').classList.remove('hidden');
+            document.getElementById('drawer-body-edit').classList.add('hidden');
+            document.getElementById('drawer-body-view').classList.remove('hidden');
+            document.getElementById('drawer-footer-actions').classList.remove('hidden');
+            document.getElementById('edit-sticky-footer').classList.add('hidden');
+
+            updateDrawerWidths();
+        }
+
+        function saveChanges() {
+            let row = masterRows[activeRowIndex];
+            
+            if (row.approval !== 'APPROVED') {
+                row.no = document.getElementById('input-no').value;
+                row.nama = document.getElementById('input-nama').value;
+                row.jenis = document.getElementById('input-jenis').value;
+                row.maks = document.getElementById('input-maks').value;
+                row.catatan = document.getElementById('input-catatan').value;
+                row.numericTgl = document.getElementById('input-tgl').value;
+                row.tgl = row.numericTgl ? new Date(row.numericTgl).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-';
+                row.berakhirDate = document.getElementById('input-berakhir').value;
+                row.berakhir = row.berakhirDate ? new Date(row.berakhirDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-';
+                
+                if (row.tipe === 'AJB') {
+                    let rincianList = [];
+                    document.querySelectorAll('#edit-rincian-ajb-rows .ajb-row-item').forEach(r => {
+                        let biaya = r.querySelector('.ajb-biaya-select').value;
+                        let jumlah = Number(r.querySelector('.ajb-jumlah-input').value) || 0;
+                        if (biaya) rincianList.push({ biaya, jumlah });
+                    });
+                    row.rincianAjb = rincianList;
+                } else {
+                    let f1Elem = document.getElementById('input-field1');
+                    let f2Elem = document.getElementById('input-field2');
+                    if (f1Elem) row.field1 = f1Elem.value;
+                    if (f2Elem) row.field2 = f2Elem.value;
+                }
+
+                let firstRow = document.getElementById('edit-project-rows-container').children[0];
+                if (firstRow) {
+                    row.projectName = firstRow.querySelector('.project-select').value;
+                    let subChecked = [];
+                    firstRow.querySelectorAll('.sub-chk:checked').forEach(chk => subChecked.push(chk.value));
+                    row.subProjects = subChecked;
+                }
+            }
+
+            let newFileName = editUploadedFileObject ? editUploadedFileObject.name : '-';
+            if (newFileName !== row.lampiran) {
+                if (!row.docHistory) row.docHistory = [];
+                let nowStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+                
+                if (newFileName !== '-') {
+                    row.docHistory.push({
+                        action: 'Upload',
+                        user: 'bernardus.zagoto@agungsedayu.com',
+                        time: nowStr,
+                        fileName: newFileName
+                    });
+                }
+            }
+            row.lampiran = newFileName;
+
+            openDetailDrawer(row, activeRowIndex);
+            renderTable();
+        }
+
+        function getApprovalBadge(status) {
+            if (status === 'APPROVED') {
+                return `<span class="inline-flex items-center justify-center w-full py-0.5 rounded text-[8px] font-medium bg-[#D4F4DC] text-[#0F7A31] border border-[#86efac]">APPROVED</span>`;
+            } else if (status === 'REJECTED') {
+                return `<span class="inline-flex items-center justify-center w-full py-0.5 rounded text-[8px] font-medium bg-[#FAD4CE] text-[#C51A00] border border-[#fca5a5]">REJECTED</span>`;
+            } else if (status === 'WAITING FOR APPROVAL') {
+                return `<span class="inline-flex items-center justify-center w-full py-0.5 rounded text-[8px] font-medium bg-[#D8EDFF] text-[#0E62B3] border border-[#93c5fd] whitespace-nowrap">WAITING FOR APPROVAL</span>`;
+            } else if (status === 'DRAFT') {
+                return `<span class="inline-flex items-center justify-center w-full py-0.5 rounded text-[8px] font-semibold bg-[#EAEAEA] text-[#555555] border border-[#d1d5db]">DRAFT</span>`;
+            }
+            return `<span class="inline-flex items-center justify-center w-full py-0.5 rounded text-[8px] font-medium bg-white text-slate-600 border border-slate-200">${status}</span>`;
+        }
+
+        function getDetailApprovalBadge(status) {
+            if (status === 'APPROVED') {
+                return `<span class="inline-flex items-center justify-center w-40 py-0.5 rounded text-[10px] font-medium bg-[#D4F4DC] text-[#0F7A31] border border-[#86efac] font-semibold">APPROVED</span>`;
+            } else if (status === 'REJECTED') {
+                return `<span class="inline-flex items-center justify-center w-40 py-0.5 rounded text-[10px] font-medium bg-[#FAD4CE] text-[#C51A00] border border-[#fca5a5] font-semibold">REJECTED</span>`;
+            } else if (status === 'WAITING FOR APPROVAL') {
+                return `<span class="inline-flex items-center justify-center w-40 py-0.5 rounded text-[10px] font-medium bg-[#D8EDFF] text-[#0E62B3] border border-[#93c5fd] font-semibold whitespace-nowrap">WAITING FOR APPROVAL</span>`;
+            } else if (status === 'DRAFT') {
+                return `<span class="inline-flex items-center justify-center w-40 py-0.5 rounded text-[10px] font-medium bg-[#EAEAEA] text-[#555555] border border-[#d1d5db] font-semibold">DRAFT</span>`;
+            }
+            return `<span class="inline-flex items-center justify-center w-40 py-0.5 rounded text-[10px] font-medium bg-white text-slate-600 border border-slate-200 font-semibold">${status}</span>`;
+        }
+
+        function getStatusBadge(row) {
+            if (row.approval === 'APPROVED') {
+                if (row.status === 'ACTIVE') {
+                    return `<span class="inline-flex items-center justify-center w-full py-0.5 rounded text-[8px] font-medium bg-[#D4F4DC] text-[#0F7A31] border border-[#86efac]">ACTIVE</span>`;
+                } else {
+                    return `<span class="inline-flex items-center justify-center w-full py-0.5 rounded text-[8px] font-semibold bg-[#94A3B8] text-white border border-[#64748b]">INACTIVE</span>`;
+                }
+            } else {
+                // Status utama Draft menggunakan warna #EAEAEA dengan teks #555555
+                return `<span class="inline-flex items-center justify-center w-full py-0.5 rounded text-[8px] font-semibold bg-[#EAEAEA] text-[#555555] border border-[#d1d5db]">DRAFT</span>`;
+            }
+        }
+
+        function filterByApproval(approvalStatus) {
+            currentApprovalFilter = approvalStatus;
+            
+            const pills = [
+                { id: 'pill-all', key: 'ALL' },
+                { id: 'pill-draft', key: 'DRAFT' },
+                { id: 'pill-waiting', key: 'WAITING FOR APPROVAL' },
+                { id: 'pill-rejected', key: 'REJECTED' },
+                { id: 'pill-approved', key: 'APPROVED' }
+            ];
+
+            pills.forEach(p => {
+                const el = document.getElementById(p.id);
+                if (p.key === currentApprovalFilter) {
+                    if (p.key === 'ALL') {
+                        el.style.backgroundColor = '#0F172A';
+                        el.style.color = '#FFFFFF';
+                        el.style.borderColor = '#0F172A';
+                    } else if (p.key === 'DRAFT') {
+                        el.style.backgroundColor = '#EAEAEA';
+                        el.style.color = '#555555';
+                        el.style.borderColor = '#d1d5db';
+                    } else if (p.key === 'WAITING FOR APPROVAL') {
+                        el.style.backgroundColor = '#D8EDFF';
+                        el.style.color = '#0E62B3';
+                        el.style.borderColor = '#93c5fd';
+                    } else if (p.key === 'REJECTED') {
+                        el.style.backgroundColor = '#FAD4CE';
+                        el.style.color = '#C51A00';
+                        el.style.borderColor = '#fca5a5';
+                    } else if (p.key === 'APPROVED') {
+                        el.style.backgroundColor = '#D4F4DC';
+                        el.style.color = '#0F7A31';
+                        el.style.borderColor = '#86efac';
+                    }
+                } else {
+                    el.style.backgroundColor = '';
+                    el.style.color = '';
+                    el.style.borderColor = '';
+                    
+                    if (p.key === 'ALL') {
+                        el.className = 'px-3.5 py-1 rounded-full border border-slate-200 text-xs font-medium transition shadow-2xs bg-white text-slate-600 hover:bg-slate-50 whitespace-nowrap';
+                    } else if (p.key === 'DRAFT') {
+                        el.className = 'px-3.5 py-1 rounded-full border border-slate-200 text-xs font-medium transition shadow-2xs bg-white text-slate-600 hover:bg-slate-50 whitespace-nowrap';
+                    } else if (p.key === 'WAITING FOR APPROVAL') {
+                        el.className = 'px-3.5 py-1 rounded-full border border-slate-200 text-xs font-medium transition shadow-2xs bg-white text-slate-600 hover:bg-slate-50 whitespace-nowrap';
+                    } else if (p.key === 'REJECTED') {
+                        el.className = 'px-3.5 py-1 rounded-full border border-slate-200 text-xs font-medium transition shadow-2xs bg-white text-slate-600 hover:bg-slate-50 whitespace-nowrap';
+                    } else if (p.key === 'APPROVED') {
+                        el.className = 'px-3.5 py-1 rounded-full border border-slate-200 text-xs font-medium transition shadow-2xs bg-white text-slate-600 hover:bg-slate-50 whitespace-nowrap';
+                    }
+                }
+            });
+
+            applyFilter();
+        }
+
+        function updateApprovalCounts() {}
+
+        function renderTable() {
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+            
+            updateApprovalCounts();
+
+            let start = (currentPage - 1) * pageSize;
+            let end = start + pageSize;
+            let paginatedRows = filteredRows.slice(start, end);
+
+            if (paginatedRows.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="10" class="text-center py-6 text-slate-400">Tidak ada data yang ditemukan.</td></tr>`;
+            } else {
+                paginatedRows.forEach((r) => {
+                    let tr = document.createElement('tr');
+                    tr.onclick = () => openDetailDrawer(r);
+                    tr.innerHTML = `
+                        <td><div class="multi-line-cell font-normal text-slate-800">${r.no}</div></td>
+                        <td><div class="multi-line-cell">${r.tgl}</div></td>
+                        <td><div class="multi-line-cell font-normal text-slate-800">${r.nama}</div></td>
+                        <td><div class="multi-line-cell">${r.tipe}</div></td>
+                        <td><div class="multi-line-cell">${r.jenis}</div></td>
+                        <td><div class="multi-line-cell">${r.berlaku}</div></td>
+                        <td><div class="multi-line-cell">${r.berakhir}</div></td>
+                        <td><div class="w-full flex items-center">${getStatusBadge(r)}</div></td>
+                        <td><div class="w-full flex items-center">${getApprovalBadge(r.approval)}</div></td>
+                        <td><div class="multi-line-cell uppercase text-slate-600">${r.creator}</div></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            let startItem = filteredRows.length > 0 ? start + 1 : 0;
+            let endItem = Math.min(end, filteredRows.length);
+            document.getElementById('pagination-info').innerText = `Item ${startItem} to ${endItem} of ${filteredRows.length} item`;
+
+            const pagButtons = document.getElementById('pagination-buttons');
+            pagButtons.innerHTML = '';
+            let totalPages = Math.ceil(filteredRows.length / pageSize) || 1;
+
+            pagButtons.innerHTML += `<button onclick="changePage(1)" class="w-6 h-6 flex items-center justify-center rounded hover:bg-slate-100 text-slate-500 font-semibold" ${currentPage === 1 ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>«</button>`;
+            pagButtons.innerHTML += `<button onclick="changePage(${currentPage - 1})" class="w-6 h-6 flex items-center justify-center rounded hover:bg-slate-100 text-slate-500 font-semibold" ${currentPage === 1 ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>‹</button>`;
+
+            for (let p = 1; p <= totalPages; p++) {
+                if (p === currentPage) {
+                    pagButtons.innerHTML += `<button style="background-color: #0E89F9;" class="w-6 h-6 flex items-center justify-center rounded-md text-white font-medium shadow-sm">${p}</button>`;
+                } else {
+                    pagButtons.innerHTML += `<button onclick="changePage(${p})" class="w-6 h-6 flex items-center justify-center rounded hover:bg-slate-100 text-slate-600">${p}</button>`;
+                }
+            }
+
+            pagButtons.innerHTML += `<button onclick="changePage(${currentPage + 1})" class="w-6 h-6 flex items-center justify-center rounded hover:bg-slate-100 text-slate-500 font-semibold" ${currentPage === totalPages ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>›</button>`;
+            pagButtons.innerHTML += `<button onclick="changePage(${totalPages})" class="w-6 h-6 flex items-center justify-center rounded hover:bg-slate-100 text-slate-500 font-semibold" ${currentPage === totalPages ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>»</button>`;
+        }
+
+        function applyFilter() {
+            const tipeVal = document.getElementById('filter-tipe').value;
+            const jenisVal = document.getElementById('filter-jenis').value;
+            const statusVal = document.getElementById('filter-status').value;
+            const searchVal = document.getElementById('search-input').value.toLowerCase();
+
+            filteredRows = masterRows.filter(r => {
+                let matchApproval = (currentApprovalFilter === 'ALL') || (r.approval === currentApprovalFilter);
+                let matchTipe = !tipeVal || r.tipe === tipeVal;
+                let matchJenis = !jenisVal || r.jenis === jenisVal;
+                let matchStatus = !statusVal || r.status === statusVal;
+                let matchSearch = !searchVal || Object.values(r).some(val => String(val).toLowerCase().includes(searchVal));
+                return matchApproval && matchTipe && matchJenis && matchStatus && matchSearch;
+            });
+
+            currentPage = 1;
+            document.getElementById('filter-dropdown').classList.add('hidden');
+            renderTable();
+        }
+
+        function resetFilter() {
+            document.getElementById('filter-tipe').value = '';
+            document.getElementById('filter-jenis').value = '';
+            document.getElementById('filter-status').value = '';
+            document.getElementById('search-input').value = '';
+            currentApprovalFilter = 'ALL';
+            
+            filterByApproval('ALL');
+        }
+
+        function handleSearch() {
+            applyFilter();
+        }
+
+        function changePage(p) {
+            let totalPages = Math.ceil(filteredRows.length / pageSize);
+            if (p >= 1 && p <= totalPages) {
+                currentPage = p;
+                renderTable();
+            }
+        }
+
+        function sortTable(columnIndex) {
+            const keys = ['no', 'dateObj', 'nama', 'tipe', 'jenis', 'berlaku', 'berakhir', 'status', 'approval', 'creator'];
+            const key = keys[columnIndex];
+            
+            sortDirection[columnIndex] = !sortDirection[columnIndex];
+            const asc = sortDirection[columnIndex];
+
+            filteredRows.sort((a, b) => {
+                let valA = a[key] || '';
+                let valB = b[key] || '';
+                if (valA < valB) return asc ? -1 : 1;
+                if (valA > valB) return asc ? 1 : -1;
+                return 0;
+            });
+
+            renderTable();
+        }
+
+        window.onclick = function(event) {
+            if (!event.target.closest('#filter-dropdown') && !event.target.closest('button[onclick*="toggleFilterDropdown"]') &&
+                !event.target.closest('#add-modal') && !event.target.closest('button[onclick*="toggleAddModal"]')) {
+                document.getElementById('filter-dropdown').classList.add('hidden');
+                document.getElementById('add-modal').classList.add('hidden');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('pill-draft').className = 'px-3.5 py-1 rounded-full border border-slate-200 text-xs font-medium transition shadow-2xs bg-white text-slate-600 hover:bg-slate-50 whitespace-nowrap';
+            document.getElementById('pill-waiting').className = 'px-3.5 py-1 rounded-full border border-slate-200 text-xs font-medium transition shadow-2xs bg-white text-slate-600 hover:bg-slate-50 whitespace-nowrap';
+            document.getElementById('pill-rejected').className = 'px-3.5 py-1 rounded-full border border-slate-200 text-xs font-medium transition shadow-2xs bg-white text-slate-600 hover:bg-slate-50 whitespace-nowrap';
+            document.getElementById('pill-approved').className = 'px-3.5 py-1 rounded-full border border-slate-200 text-xs font-medium transition shadow-2xs bg-white text-slate-600 hover:bg-slate-50 whitespace-nowrap';
+        });
+
+        renderTable();
+    </script>
+</body>
+</html>
