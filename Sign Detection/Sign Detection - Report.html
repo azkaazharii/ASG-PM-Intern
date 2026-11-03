@@ -1,0 +1,1362 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VS SAD — Report & Detail Monitoring Dokumen Penjualan</title>
+<!-- Flatpickr CSS & JS CDN untuk Date Range Picker yang Clean -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/l10n/id.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+</script>
+<style>
+:root{--radius:.625rem;--background:oklch(.975 .002 250);--foreground:oklch(.24 .02 260);--brand:oklch(.58 .19 262);--brand-foreground:oklch(.99 0 0);--brand-soft:oklch(.97 .02 262);--danger:oklch(.6 .22 25);--card:oklch(1 0 0);--popover:oklch(1 0 0);--popover-foreground:oklch(.129 .042 264.695);--muted-foreground:oklch(.554 .046 257.417);--border:oklch(.929 .013 255.508);--ring:oklch(.704 .04 256.788)}
+*{box-sizing:border-box;border-color:var(--border)}html,body{margin:0;height:100vh;overflow:hidden;}body{background:var(--background);color:var(--foreground);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}button,input,select{font:inherit}button{cursor:pointer}a{color:inherit;text-decoration:none}
+.hidden{display:none !important;}
+
+/* App Layout */
+.app{display:flex;height:100vh;width:100vw;background:var(--background);overflow:hidden;}
+
+/* Sidebar Ringkas 2 Menu */
+.sidebar{display:flex;width:3.25rem;flex:0 0 3.25rem;flex-direction:column;align-items:center;gap:0.75rem;background:#0f172a;padding:0.75rem 0;height:100vh;position:sticky;top:0;left:0;z-index:50;}
+.side-icon{display:inline-flex;align-items:center;justify-content:center;width:2.25rem;height:2.25rem;border-radius:0.375rem;color:#94a3b8;background:transparent;transition:all 0.15s;}
+.side-icon.active{background:var(--brand);color:#ffffff;}
+.side-icon:hover{background:#1e293b;color:#ffffff;cursor:pointer;}
+
+/* Main Area */
+main{flex:1;height:100vh;padding:0.875rem 1.25rem;display:flex;flex-direction:column;overflow:hidden;}
+
+/* Page Header & Top Toolbar */
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.6rem;gap:1rem;flex-shrink:0;}
+h1{margin:0;font-size:0.95rem;font-weight:600;color:var(--foreground)}
+
+.top-toolbar{display:flex;align-items:center;gap:0.5rem;position:relative;}
+.search-box{position:relative;display:flex;align-items:center;}
+.search-box input{height:2rem;padding:0 0.75rem 0 2rem;border:1px solid var(--border);border-radius:var(--radius);font-size:0.75rem;outline:none;width:180px;color:var(--foreground);background:#ffffff;}
+.search-box input:focus{border-color:var(--ring);box-shadow:0 0 0 1px var(--ring);}
+.search-icon{position:absolute;left:0.6rem;color:var(--muted-foreground);pointer-events:none;}
+
+.tool-btn{display:inline-flex;align-items:center;justify-content:center;height:2rem;width:2rem;border:1px solid var(--border);border-radius:var(--radius);background:#ffffff;color:var(--muted-foreground);cursor:pointer;transition:background 0.15s;}
+.tool-btn:hover{background:#f8fafc;color:var(--foreground);}
+.tool-btn.active{background:var(--brand-soft);color:var(--brand);border-color:color-mix(in oklch,var(--brand) 40%,transparent);}
+
+.btn-primary{display:inline-flex;align-items:center;gap:0.35rem;background:#2563eb;color:#ffffff;border:1px solid #2563eb;height:2rem;padding:0 0.875rem;border-radius:var(--radius);font-size:0.75rem;font-weight:600;cursor:pointer;transition:background 0.15s;}
+.btn-primary:hover{background:#1d4ed8;}
+
+/* Filter Dropdown Panel */
+.filter-panel{position:absolute;top:calc(100% + 0.4rem);right:0;width:23rem;background:var(--popover);color:var(--popover-foreground);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;box-shadow:0 10px 25px rgb(0 0 0/.1);z-index:100;display:flex;flex-direction:column;gap:0.75rem;max-height:85vh;overflow-y:auto;}
+.filter-panel.hidden{display:none !important;}
+.filter-group{display:flex;flex-direction:column;gap:0.25rem;}
+.filter-group label{font-size:0.68rem;font-weight:600;color:var(--muted-foreground);text-transform:uppercase;}
+.filter-group select, .filter-group input{height:2rem;padding:0 0.5rem;border:1px solid var(--border);border-radius:4px;background:#ffffff;font-size:0.75rem;color:var(--foreground);outline:none;width:100%;}
+.filter-group select:focus, .filter-group input:focus{border-color:var(--ring);}
+
+.filter-actions{display:flex;align-items:center;justify-content:space-between;margin-top:0.25rem;border-top:1px solid var(--border);padding-top:0.5rem;}
+.btn-text{background:none;border:none;color:var(--brand);font-size:0.72rem;font-weight:600;cursor:pointer;padding:0;}
+.btn-text:hover{text-decoration:underline;}
+
+/* Table Container */
+.table-container{width:100%;flex:1;min-height:0;display:flex;flex-direction:column;overflow:visible !important;border:1px solid var(--border);border-radius:var(--radius);background:var(--card);margin-bottom:0.25rem;position:relative;z-index:1;}
+
+table{width:100%;min-width:1350px;border-collapse:collapse;text-align:left;font-size:0.68rem;table-layout:fixed;height:100%;display:flex;flex-direction:column;}
+.table-container thead{flex-shrink:0;}
+.table-container tbody{flex:1;display:flex;flex-direction:column;justify-content:flex-start;min-height:0;overflow-y:auto;}
+
+.table-container tbody tr{display:flex;height:calc((100% - 2px) / 15);min-height:0;flex-shrink:0;}
+.table-container tbody tr td{flex:1;display:flex;align-items:center;border:1px solid var(--border);}
+.table-container tbody tr.empty-row td { border: none !important; background: transparent !important; }
+
+.table-container thead tr{display:flex;height:34px;flex-shrink:0;}
+.table-container thead th{flex:1;border:1px solid var(--border);}
+
+thead th{position:sticky;top:0;background:#f1f5f9;color:#334155;font-weight:600;text-transform:uppercase;font-size:0.58rem;letter-spacing:0.02em;padding:0 6px;white-space:nowrap;cursor:pointer;user-select:none;z-index:10;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;}
+thead th:hover{background:#e2e8f0;color:var(--brand);}
+th .sort-container{display:inline-flex;align-items:center;gap:4px;}
+th span.sort-icon{display:inline-flex;align-items:center;color:var(--muted-foreground);}
+
+.report-table td{padding:0 6px;color:#1e293b;overflow:hidden;position:relative;text-transform:uppercase;height:100%;}
+.report-table td.date-cell{text-transform:none !important;}
+.report-table tr:nth-child(even):not(.empty-row) { background-color: #f8fafc; }
+.report-table tr:hover:not(.empty-row) { background-color: #f1f5f9; }
+.report-table tr.empty-row:hover { background-color: transparent; }
+
+.report-table td.multi-name-cell {
+  display: flex;
+  align-items: center;
+}
+.multi-name-wrapper {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.25;
+  max-height: 2.5em;
+  width: 100%;
+}
+
+.badge-row-stack {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex-wrap: nowrap;
+}
+
+.badge{display:inline-flex;align-items:center;gap:2px;padding:2px 4px;border-radius:3px;font-size:0.52rem;font-weight:600;white-space:nowrap;cursor:pointer;text-transform:uppercase;line-height:1.2;border:1px solid transparent;width:fit-content;}
+.badge.success{background:#dcfce7;color:#166534;border-color:#bbf7d0;}
+.badge.danger{background:#fee2e2;color:#991b1b;border-color:#fecaca;}
+.badge.warning{background:#fef3c7;color:#92400e;border-color:#fde68a;}
+.badge.muted{background:#e2e8f0;color:#334155;border-color:#cbd5e1;}
+
+/* Custom Status Badge dengan Warna Soft (Seragam & Elegan) */
+.badge.status-badge {
+  font-size: 0.58rem !important;
+  padding: 3px 6px !important;
+  width: 76px !important;
+  justify-content: center !important;
+  font-weight: 600 !important;
+}
+.badge.status-paid {
+  background-color: #DCFCE7 !important;
+  color: #15803D !important;
+  border-color: #bbf7d0 !important;
+}
+.badge.status-confirm2 {
+  background-color: #E0ECFF !important;
+  color: #1D4ED8 !important;
+  border-color: #bfdbfe !important;
+}
+
+#globalTooltip {
+  position: fixed;
+  z-index: 999999;
+  width: 26rem;
+  max-height: 80vh;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--popover);
+  color: var(--popover-foreground);
+  padding: .75rem;
+  box-shadow: 0 12px 30px rgb(0 0 0/.2);
+  pointer-events: none;
+  display: none;
+  cursor: pointer !important;
+}
+#globalTooltip * {
+  cursor: pointer !important;
+}
+
+.hover-wrap{position:relative; display:flex; align-items:center; width:100%; height:100%; cursor:pointer;}
+.hover-card-title{margin:0 0 .5rem;font-size:0.7rem;font-weight:700;color:var(--muted-foreground);letter-spacing:0.05em;border-bottom:1px solid var(--border);padding-bottom:.35rem;text-transform:uppercase;}
+.hover-card-list{display:flex;flex-direction:column;gap:.5rem;}
+
+.doc-card-block {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.doc-card-block.success { background: #dcfce7 !important; border-color: #bbf7d0 !important; }
+.doc-card-block.danger { background: #fee2e2 !important; border-color: #fecaca !important; }
+.doc-card-block.muted { background: #e2e8f0 !important; border-color: #cbd5e1 !important; }
+
+.doc-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+.sub-signers-clean {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-left: 8px;
+  border-left: 2px solid rgba(0,0,0,0.15);
+  margin-top: 4px;
+}
+.sub-signer-line {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.62rem;
+  width: 100%;
+  gap: 1px;
+}
+.sub-signer-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+.sub-signer-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  color: var(--muted-foreground);
+  font-size: 0.58rem;
+}
+
+.table-footer{display:flex;align-items:center;justify-content:center;padding:0.25rem;font-size:0.75rem;color:var(--muted-foreground);flex-shrink:0;}
+.pagination{display:flex;align-items:center;gap:0.35rem;}
+.page-btn{display:inline-flex;align-items:center;justify-content:center;min-width:1.6rem;height:1.6rem;padding:0 0.3rem;border-radius:0.25rem;font-weight:500;cursor:pointer;border:1px solid transparent;background:transparent;color:var(--foreground);}
+.page-btn.active{background:var(--brand);color:#ffffff;}
+.page-btn:disabled{opacity:0.4;cursor:not-allowed;}
+
+/* Blank State Styling */
+.blank-state-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--muted-foreground);
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  text-transform: none !important;
+}
+
+/* Toast Notification Styling */
+#toastContainer {
+  position: fixed;
+  top: 1.25rem;
+  right: 1.25rem;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.toast-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background: #ffffff;
+  border: 1px solid #bbf7d0;
+  border-left: 4px solid #22c55e;
+  padding: 0.75rem 1rem;
+  border-radius: 0.375rem;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  min-width: 280px;
+  animation: slideIn 0.2s ease-out forwards;
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.toast-icon { color: #22c55e; flex-shrink: 0; margin-top: 1px; }
+.toast-content { display: flex; flex-direction: column; flex: 1; }
+.toast-title { font-weight: 600; font-size: 0.8rem; color: #1e293b; }
+.toast-desc { font-size: 0.72rem; color: #64748b; }
+.toast-close { background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 0.9rem; padding: 0; }
+.toast-close:hover { color: #1e293b; }
+
+svg{display:block}
+</style>
+</head>
+<body>
+<div class="app" id="appRoot">
+  <!-- SIDEBAR 2 MENU UTAMA -->
+  <aside class="sidebar" aria-label="Navigasi">
+    <span class="side-icon active" id="menuReportView" title="Report Monitoring" onclick="switchView('reportView', this)">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+    </span>
+    <span class="side-icon" id="menuLogView" title="Report Log" onclick="switchView('logView', this)">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+    </span>
+  </aside>
+
+  <!-- MAIN AREA -->
+  <main>
+    <!-- VIEW 1: REPORT IN TABLE -->
+    <div id="reportView" class="view-container" style="display:flex; flex-direction:column; height:100%;">
+      <div class="page-header">
+        <h1>Report Monitoring Dokumen</h1>
+        <div class="top-toolbar">
+          <div class="search-box">
+            <span class="search-icon"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+            <input type="text" id="searchInput" placeholder="Cari data..." oninput="handleSearch()">
+          </div>
+
+          <div style="position:relative;">
+            <button type="button" class="tool-btn" id="filterToggleBtn" title="Filter Data" onclick="toggleFilterPanel(event)">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+            </button>
+
+            <!-- Filter Dropdown Panel -->
+            <div id="filterPanel" class="filter-panel hidden" onclick="event.stopPropagation()">
+              <div class="filter-group">
+                <label>Project</label>
+                <select id="filterProject" onchange="onProjectChange()">
+                  <option value="">Pilih Project</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label>Company</label>
+                <select id="filterCompany" onchange="applyFilters()">
+                  <option value="">Pilih Company</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label>Marketing</label>
+                <select id="filterMarketing" onchange="applyFilters()">
+                  <option value="">Pilih Marketing</option>
+                  <option value="Andi Wijaya">Andi Wijaya</option>
+                  <option value="Siska Melina">Siska Melina</option>
+                  <option value="Hendra Gunawan">Hendra Gunawan</option>
+                  <option value="Ratna Sari">Ratna Sari</option>
+                  <option value="Eko Prasetyo">Eko Prasetyo</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label>Status</label>
+                <select id="filterStatus" onchange="applyFilters()">
+                  <option value="">Pilih Status</option>
+                  <option value="Confirm 2">Confirm 2</option>
+                  <option value="Paid">Paid</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label>Tanggal Confirm 2</label>
+                <input type="text" id="filterDateRange" placeholder="Pilih rentang tanggal..." readonly style="background:#ffffff; cursor:pointer;">
+              </div>
+
+              <div class="filter-group">
+                <label>Document Checked</label>
+                <select id="filterChecked" onchange="applyFilters()">
+                  <option value="">Pilih Status Checked</option>
+                  <option value="complete">Lengkap (3/3)</option>
+                  <option value="partial">Sebagian (1/3 atau 2/3)</option>
+                  <option value="none">Belum (0/3)</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label>Document Signed</label>
+                <select id="filterSigned" onchange="applyFilters()">
+                  <option value="">Pilih Status Signed</option>
+                  <option value="complete">Lengkap (3/3)</option>
+                  <option value="partial">Sebagian (1/3 atau 2/3)</option>
+                  <option value="none">Belum (0/3)</option>
+                </select>
+              </div>
+
+              <div class="filter-actions">
+                <button type="button" class="btn-text" onclick="resetFilters()">Reset Filter</button>
+                <button type="button" class="btn-primary" style="height:1.75rem; font-size:0.68rem;" onclick="toggleFilterPanel(event)">Tutup</button>
+              </div>
+            </div>
+          </div>
+
+          <button type="button" class="btn-primary" onclick="triggerDownloadReport()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download Report
+          </button>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table id="monitoringTable">
+          <colgroup>
+            <col style="width: 11%;">
+            <col style="width: 10%;">
+            <col style="width: 9%;">
+            <col style="width: 13%;">
+            <col style="width: 13%;">
+            <col style="width: 7%;">
+            <col style="width: 11%;">
+            <col style="width: 10%;">
+            <col style="width: 8%;">
+            <col style="width: 8%;">
+          </colgroup>
+          <thead>
+            <tr>
+              <th onclick="sortGlobal(0)"><div class="sort-container"><span>KODE RESERVASI</span><span class="sort-icon" id="sort-0"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg></span></div></th>
+              <th onclick="sortGlobal(1)"><div class="sort-container"><span>TANGGAL CONFIRM 2</span><span class="sort-icon" id="sort-1"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg></span></div></th>
+              <th onclick="sortGlobal(2)"><div class="sort-container"><span>STATUS</span><span class="sort-icon" id="sort-2"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg></span></div></th>
+              <th onclick="sortGlobal(3)"><div class="sort-container"><span>COMPANY</span><span class="sort-icon" id="sort-3"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg></span></div></th>
+              <th onclick="sortGlobal(4)"><div class="sort-container"><span>PROJECT</span><span class="sort-icon" id="sort-4"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg></span></div></th>
+              <th onclick="sortGlobal(5)"><div class="sort-container"><span>KODE UNIT</span><span class="sort-icon" id="sort-5"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg></span></div></th>
+              <th onclick="sortGlobal(6)"><div class="sort-container"><span>NAMA KONSUMEN</span><span class="sort-icon" id="sort-6"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg></span></div></th>
+              <th onclick="sortGlobal(7)"><div class="sort-container"><span>NAMA MARKETING</span><span class="sort-icon" id="sort-7"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg></span></div></th>
+              <th onclick="sortGlobal(8)"><div class="sort-container"><span>DOCUMENT SIGNED</span><span class="sort-icon" id="sort-8"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg></span></div></th>
+              <th onclick="sortGlobal(9)"><div class="sort-container"><span>DOCUMENT CHECKED</span><span class="sort-icon" id="sort-9"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg></span></div></th>
+            </tr>
+          </thead>
+          <tbody id="reportTableBody" class="report-table"></tbody>
+        </table>
+      </div>
+
+      <div class="table-footer">
+        <div class="pagination" id="paginationContainer"></div>
+      </div>
+    </div>
+
+    <!-- VIEW 2: REPORT LOG -->
+    <div id="logView" class="view-container hidden" style="display:none; flex-direction:column; height:100%;">
+      <div class="page-header">
+        <h1>Report Log</h1>
+      </div>
+
+      <div class="table-container">
+        <table id="logTable">
+          <colgroup>
+            <col style="width: 25%;">
+            <col style="width: 12%;">
+            <col style="width: 12%;">
+            <col style="width: 12%;">
+            <col style="width: 12%;">
+            <col style="width: 12%;">
+            <col style="width: 9%;">
+            <col style="width: 6%;">
+          </colgroup>
+          <thead>
+            <tr>
+              <th><span>FILE NAME</span></th>
+              <th><span>AS OF DATE</span></th>
+              <th><span>FROM DATE</span></th>
+              <th><span>TO DATE</span></th>
+              <th><span>EXPIRED DATE</span></th>
+              <th><span>REPORT TYPE</span></th>
+              <th><span>STATUS</span></th>
+              <th><span>ACTION</span></th>
+            </tr>
+          </thead>
+          <tbody id="logTableBody" class="report-table"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="globalTooltip"></div>
+<div id="toastContainer"></div>
+
+<script>
+"use strict";
+
+const projectCompaniesMapping = {
+  "GI - GOLF ISLAND": ["PT KAPUK NAGA INDAH"],
+  "RWI - RIVERWALK ISLAND": ["PT KAPUK NAGA INDAH"],
+  "GC - GOLD COAST": ["PT MULTI ARTHA PRATAMA"],
+  "BGM - BUKIT GOLF MEDITERANIA": ["PT MULTI ARTHA PRATAMA"],
+  "G8 - GOLF 8": ["PT MULTI ARTHA PRATAMA"],
+  "PIK2 - PANTAI INDAH KAPUK 2": [
+    "PT FIN CENTERINDO SATU",
+    "PT CAHAYA KENCANA INDAH",
+    "PT SUMBER CIPTA UTAMA",
+    "PT KENCANA SEDAYU ABADI",
+    "PT TRISULA INDAH LESTARI",
+    "PT BANGUN KOSAMBI SUKSES",
+    "PT KUKUH MANDIRI LESTARI",
+    "PT MANDIRI BANGUN MAKMUR"
+  ],
+  "PENS - PENINSULA": ["PT CITRA ABADI MANDIRI"],
+  "GNZA - GINZA": ["PT CITRA ABADI MANDIRI"],
+  "KVPP - KAVLING PASIR PUTIH": ["PT CITRA ABADI MANDIRI"],
+  "PI2E - PANTAI INDAH KAPUK 2 - EXTENSION": [
+    "PT BUMINDO MEKAR WIBAWA",
+    "PT SHARINDO MATRATAMA",
+    "PT CAHAYA INTI SENTOSA",
+    "PT JAYA INDAH SENTOSA",
+    "PT KEMILAU KARYA UTAMA",
+    "PT MEGA ANDALAN SUKSES",
+    "PT INTAN AGUNG MAKMUR",
+    "PT KARUNIA UTAMA SELARAS"
+  ],
+  "PI3A - PANTAI INDAH KAPUK 3A": ["PT PANORAMA EKA TUNGGAL"],
+  "PI3B - PANTAI INDAH KAPUK 3B": ["PT BINTANG ALAM MAKMUR"],
+  "PI3C - PANTAI INDAH KAPUK 3C": ["PT KARYA MANUNGGAL LESTAR"],
+  "PICM - PESONA INDAH CEMARA MEDAN": ["KSO SEDAYU BUKIT MAKMUR"],
+  "AM - ANCOL MANSION": ["PT CAHAYA AGUNG MAKMUR"],
+  "BPC - BIZ PARK CAKUNG": ["PT SEDAYU SEJAHTERA ABADI"],
+  "CRR - CITY RESORT RESIDENCE": ["PT KARYA MEGAH PERMAI"],
+  "DM - DAAN MOGOT": ["PT SEKSARSARI ARYADUTA"],
+  "DGK - DUKUH GOLF KEMAYORAN": ["PT PERKASA ABADI JAYA"],
+  "FCC - FATMAWATI CITY CENTER": ["PT MEKAELSA"],
+  "GLR - GOLF LAKE RESIDENCE": ["PT SEDAYU SEJAHTERA ABADI"],
+  "GRK - GOLF RESIDENCE KEMAYORAN": ["PT SEDAYU KEMILAU ABADI"],
+  "CC - GRAND CIBUBUR COUNTRY": ["PT CIBUBUR COUNTRY"],
+  "GGC - GRAND GALAXY CITY": ["PT CIPTA SEDAYU INDAH"],
+  "GLC - GREEN LAKE CITY": ["PT SUMBER KENCANA GRAHA"],
+  "GM - GREEN MANSION": ["PT SEKSARSARI ARYADUTA"],
+  "GP - GREEN PURI": ["PT CATUR MARGA UTAMA"],
+  "GR - GREEN ROYAL": ["PT CATUR MARGA UTAMA"],
+  "GSA - GREEN SEDAYU": ["PT PANORAMA BANGUN LESTARI"],
+  "GV - GREEN VILLAGE": ["PT CATUR MARGA UTAMA"],
+  "KGS - KELAPA GADING": ["PT MAKMUR JAYA SERASI"],
+  "MJ - MENARA JAKARTA": ["PT PRASADA JAPA PAMUDJA"],
+  "MP - MENTENG PARK": ["PT CEMPAKA WENANG JAYA"],
+  "PMA - PURI MANSION APARTMENT": ["PT CITRA ABADI MANDIRI"],
+  "PM - PURI MANSION": ["PT CITRA ABADI MANDIRI"],
+  "R1 - RESIDENCE 1": ["PT SERPONG MEGA SUKSES"],
+  "R8 - RESIDENCE 8": ["PT BINTANG SEDAYU MAKMUR"],
+  "RV - RIVER VALLEY": ["PT KARUNIA SEDAYU ABADI"],
+  "D8 - SCBD": ["PT INTI MENARA SELARAS", "PT SUMBERCIPTA GRIYAUTAMA"],
+  "SBP - SEDAYU BUSINESS PARK": ["PT CAKRA BINALESTARI"],
+  "SCK1 - SEDAYU CITY KELAPA GADING 1": ["PT CITRA ABADI MANDIRI"],
+  "SCK2 - SEDYAU CITY KELAPA GADING 2": ["PT CITRA ABADI MANDIRI"],
+  "SS - SEDAYU SQUARE": ["PT SEDAYU SEJAHTERA ABADI"],
+  "SR - SENAYAN RESIDENCE": ["PT SINJAYA"],
+  "TAR - TAMAN ANGGREK RESIDENCE": ["PT ARYAKENCANA SEMESTA"],
+  "KM - THE MANSION AT KEMANG": ["PT CIPTA INDAH MEGAH"]
+};
+
+const firstNames = ["Rizky", "Dewi", "Ahmad", "Siti", "Budi", "Citra", "Dedi", "Eka", "Fajar", "Gita", "Hadi", "Intan", "Joko", "Kartika", "Lestari", "Muhammad", "Nining", "Oki", "Putri", "Reza"];
+const lastNames = ["Pratama", "Wulandari", "Saputra", "Rahmawati", "Santoso", "Lestari", "Gunawan", "Utami", "Hidayat", "Sari", "Wibowo", "Kusuma", "Nugroho", "Pertiwi", "Firmansyah", "Ramadhan", "Anggraini", "Kurniawan", "Suryani", "Permana"];
+
+const verifiersList = ["Aditya Putra", "Jessica M.", "Michael Tan", "Rini Anggraini", "Bambang Pamungkas", "Sarah Wijaya"];
+const marketingList = ["Andi Wijaya", "Siska Melina", "Hendra Gunawan", "Ratna Sari", "Eko Prasetyo"];
+
+const prefixes = ["APT", "SPR", "KVC", "TST", "OFT", "ARC", "PHS", "SOH", "KIOS", "RES"];
+let sampleUnitCodes = [];
+for(let p of prefixes) {
+  for(let n = 1; n <= 5; n++) {
+    sampleUnitCodes.push(`${p}-${n < 10 ? '00' + n : '0' + n}`);
+  }
+}
+
+function getFormattedVerifDate(createDateStr) {
+  if(!createDateStr || createDateStr === '-') return '20 Aug 2026, 14:35';
+  const parts = createDateStr.split(' ');
+  if(parts.length < 3) return `${createDateStr}, 14:35`;
+  let day = parts[0];
+  let month = parts[1];
+  let year = parts[2];
+  const monthMap = { 
+    'jan':'Jan', 'feb':'Feb', 'mar':'Mar', 'apr':'Apr', 'mei':'May', 'jun':'Jun', 'jul':'Jul', 'agu':'Aug', 'sep':'Sep', 'okt':'Oct', 'nov':'Nov', 'des':'Dec',
+    'january':'Jan', 'february':'Feb', 'march':'Mar', 'april':'Apr', 'may':'May', 'june':'Jun', 'july':'Jul', 'august':'Aug', 'september':'Sep', 'october':'Oct', 'november':'Nov', 'december':'Dec',
+    'JAN':'Jan', 'FEB':'Feb', 'MAR':'Mar', 'APR':'Apr', 'MEI':'May', 'JUN':'Jun', 'JUL':'Jul', 'AGU':'Aug', 'SEP':'Sep', 'OKT':'Oct', 'NOV':'Nov', 'DES':'Dec' 
+  };
+  let mappedMonth = monthMap[month.toLowerCase()] || month;
+  return `${day} ${mappedMonth} ${year}, 14:35`;
+}
+
+let unitsDatabase = {};
+const projectKeys = Object.keys(projectCompaniesMapping);
+
+for (let i = 1; i <= 60; i++) {
+  const project = projectKeys[(i - 1) % projectKeys.length];
+  const companiesOfProject = projectCompaniesMapping[project];
+  const company = companiesOfProject[(i * 3) % companiesOfProject.length];
+
+  const unitCode = sampleUnitCodes[(i - 1) % sampleUnitCodes.length];
+  let monthYear = (i > 30) ? "0926" : "0826";
+  let seqNo = (i > 30) ? (i - 30) : i;
+  let paddedNo = String(seqNo).padStart(3, '0');
+  const rsvCode = `ASG/${monthYear}/${paddedNo}`;
+  
+  let baseTimestamp = (monthYear === "0926") ? new Date(2026, 8, 1).getTime() : new Date(2026, 7, 1).getTime();
+  let itemDate = new Date(baseTimestamp + (seqNo - 1) * 86400000);
+  const monthsNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const createDateStr = `${String(itemDate.getDate()).padStart(2, '0')} ${monthsNames[itemDate.getMonth()]} ${itemDate.getFullYear()}`;
+  
+  let primaryName = `${firstNames[(i * 3) % firstNames.length]} ${lastNames[(i * 5) % lastNames.length]}`;
+  let marketingName = marketingList[i % marketingList.length];
+  let signersFRU = [];
+  let displayNames = primaryName;
+
+  const statusArr = ["Confirm 2", "Paid", "Confirm 2", "Paid", "Confirm 2"];
+  const status = statusArr[(i * 11) % statusArr.length];
+  const signerCountType = (i * 13) % 3;
+
+  let s1Signed = true, s1Checked = (i % 2 === 0);
+  let s2Signed = (i % 3 !== 0), s2Checked = s2Signed && (i % 5 === 0);
+  let s3Signed = (i % 5 !== 0), s3Checked = s3Signed && (i % 3 === 0);
+
+  let unitVerifier1 = verifiersList[i % verifiersList.length];
+  let unitVerifier2 = verifiersList[(i + 1) % verifiersList.length];
+  let unitVerifier3 = verifiersList[(i + 2) % verifiersList.length];
+  let itemVerifDateStr = getFormattedVerifDate(createDateStr);
+
+  if (signerCountType === 2) {
+    let secondName = `${firstNames[(i * 7) % firstNames.length]} ${lastNames[(i * 2) % lastNames.length]}`;
+    let thirdName = `${firstNames[(i * 11) % firstNames.length]} ${lastNames[(i * 9) % lastNames.length]}`;
+    displayNames = `${primaryName}, ${secondName}, ${thirdName}`;
+    signersFRU = [
+      { name: primaryName, signed: s1Signed, checked: s1Checked, dateSign: itemVerifDateStr, dateCheck: itemVerifDateStr, verifier: unitVerifier1 },
+      { name: secondName, signed: s2Signed, checked: s2Checked, dateSign: itemVerifDateStr, dateCheck: itemVerifDateStr, verifier: unitVerifier2 },
+      { name: thirdName, signed: s3Signed, checked: s3Checked, dateSign: itemVerifDateStr, dateCheck: itemVerifDateStr, verifier: unitVerifier3 }
+    ];
+  } else if (signerCountType === 1) {
+    let secondName = `${firstNames[(i * 4) % firstNames.length]} ${lastNames[(i * 8) % lastNames.length]}`;
+    displayNames = `${primaryName}, ${secondName}`;
+    signersFRU = [
+      { name: primaryName, signed: s1Signed, checked: s1Checked, dateSign: itemVerifDateStr, dateCheck: itemVerifDateStr, verifier: unitVerifier1 },
+      { name: secondName, signed: s2Signed, checked: s2Checked, dateSign: itemVerifDateStr, dateCheck: itemVerifDateStr, verifier: unitVerifier2 }
+    ];
+  } else {
+    signersFRU = [
+      { name: primaryName, signed: s1Signed, checked: s1Checked, dateSign: itemVerifDateStr, dateCheck: itemVerifDateStr, verifier: unitVerifier1 }
+    ];
+  }
+  
+  let fpuUploaded = true;
+  let fpuSigned = (i % 3 !== 1);
+  let fpuChecked = fpuSigned && (i % 4 === 0);
+
+  let psUploaded = true;
+  let psSigned = (i % 4 !== 2);
+  let psChecked = psSigned && (i % 3 === 0);
+
+  let uniqueKey = `${unitCode}_${i}`;
+  unitsDatabase[uniqueKey] = {
+    rsv: rsvCode,
+    createDate: createDateStr,
+    status: status,
+    company: company,
+    project: project,
+    unit: unitCode,
+    name: displayNames,
+    marketing: marketingName,
+    verifier: unitVerifier1,
+    signersFRU: signersFRU,
+    fpu: { uploaded: fpuUploaded, signed: fpuSigned, checked: fpuChecked, name: `FPU_${primaryName.toUpperCase().replace(/\s+/g,'_')}_${unitCode}.pdf`, dateSign: itemVerifDateStr, dateCheck: itemVerifDateStr, verifier: unitVerifier2 },
+    ps: { uploaded: psUploaded, signed: psSigned, checked: psChecked, name: `PAYMENT_SCHEDULE_${primaryName.toUpperCase().replace(/\s+/g,'_')}_${unitCode}.pdf`, dateSign: itemVerifDateStr, dateCheck: itemVerifDateStr, verifier: unitVerifier3 }
+  };
+}
+
+let reportLogsData = [];
+
+let currentPage = 1;
+const itemsPerPage = 15;
+let searchQuery = "";
+
+let filterProjectVal = "";
+let filterCompanyVal = "";
+let filterMarketingVal = "";
+let filterStatusVal = "";
+let filterDateStartVal = "";
+let filterDateEndVal = "";
+let filterCheckedVal = "";
+let filterSignedVal = "";
+
+let currentSortColumn = 0; 
+let currentSortDirection = "desc"; 
+let datePickerInstance = null;
+
+function esc(v){return String(v).toUpperCase().replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function escNormal(v){return String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+
+function getFormattedProjectName(projName) {
+  if (!projName) return '';
+  const parts = projName.split(' - ');
+  if (parts.length > 1) {
+    parts.shift();
+    return parts.join(' - ');
+  }
+  return projName;
+}
+
+function formatDateToDDMMYYYY(dStr) {
+  if(!dStr || dStr === '-') return '-';
+  const parts = dStr.split(' ');
+  if(parts.length < 3) return dStr;
+  const day = String(parts[0]).padStart(2, '0');
+  const months = {Jan:'01', Feb:'02', Mar:'03', Apr:'04', May:'05', Jun:'06', Jul:'07', Aug:'08', Sep:'09', Oct:'10', Nov:'11', Dec:'12'};
+  const month = months[parts[1]] || '09';
+  const year = parts[2];
+  return `${day}/${month}/${year}`;
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  populateProjectDropdown();
+  populateCompanyDropdown();
+
+  datePickerInstance = flatpickr("#filterDateRange", {
+    mode: "range",
+    dateFormat: "Y-m-d",
+    locale: "id",
+    altInput: true,
+    altFormat: "j F Y",
+    conjunction: " s/d ",
+    onChange: function(selectedDates, dateStr, instance) {
+      if(selectedDates.length === 2) {
+        filterDateStartVal = instance.formatDate(selectedDates[0], "Y-m-d");
+        filterDateEndVal = instance.formatDate(selectedDates[1], "Y-m-d");
+        applyFilters();
+      } else if(selectedDates.length === 0) {
+        filterDateStartVal = "";
+        filterDateEndVal = "";
+        applyFilters();
+      }
+    }
+  });
+  renderReportTable();
+  renderLogTable();
+});
+
+function populateProjectDropdown() {
+  const projectSelect = document.getElementById("filterProject");
+  let optionsHtml = '<option value="">Pilih Project</option>';
+  projectKeys.sort().forEach(proj => {
+    optionsHtml += `<option value="${proj}" ${filterProjectVal === proj ? 'selected' : ''}>${proj}</option>`;
+  });
+  projectSelect.innerHTML = optionsHtml;
+}
+
+function populateCompanyDropdown() {
+  const companySelect = document.getElementById("filterCompany");
+  
+  if (!filterProjectVal || filterProjectVal === "") {
+    companySelect.innerHTML = '<option value="">Pilih Company</option><option value="" disabled style="color:var(--muted-foreground);">Pilih project terlebih dahulu</option>';
+    filterCompanyVal = "";
+    return;
+  }
+
+  let availableCompanies = projectCompaniesMapping[filterProjectVal] || [];
+  let optionsHtml = '<option value="">Pilih Company</option>';
+  availableCompanies.forEach(comp => {
+    optionsHtml += `<option value="${comp}" ${filterCompanyVal === comp ? 'selected' : ''}>${comp}</option>`;
+  });
+  companySelect.innerHTML = optionsHtml;
+}
+
+function onProjectChange() {
+  filterProjectVal = document.getElementById("filterProject").value;
+  filterCompanyVal = ""; 
+  populateCompanyDropdown();
+  applyFilters();
+}
+
+function switchView(viewId, element) {
+  document.querySelectorAll('.view-container').forEach(el => {
+    el.classList.add('hidden');
+    el.style.display = 'none';
+  });
+  const target = document.getElementById(viewId);
+  if(target) {
+    target.classList.remove('hidden');
+    target.style.display = 'flex';
+  }
+  document.querySelectorAll('.sidebar .side-icon').forEach(el => el.classList.remove('active'));
+  if(element) element.classList.add('active');
+}
+
+function toggleFilterPanel(e) {
+  e.stopPropagation();
+  const panel = document.getElementById("filterPanel");
+  const btn = document.getElementById("filterToggleBtn");
+  panel.classList.toggle("hidden");
+  if(!panel.classList.contains("hidden")) {
+    btn.classList.add("active");
+  } else {
+    btn.classList.remove("active");
+  }
+}
+
+window.addEventListener("click", () => {
+  const panel = document.getElementById("filterPanel");
+  const btn = document.getElementById("filterToggleBtn");
+  if(panel && !panel.classList.contains("hidden")) {
+    panel.classList.add("hidden");
+    btn.classList.remove("active");
+  }
+});
+
+function parseDateStr(dStr) {
+  const parts = dStr.split(' ');
+  const months = {Jan:0, Feb:1, Mar:2, Apr:3, May:4, Jun:5, Jul:6, Aug:7, Sep:8, Oct:9, Nov:10, Dec:11};
+  return new Date(parts[2], months[parts[1]] || 8, parseInt(parts[0], 10)).getTime();
+}
+
+function applyFilters() {
+  filterProjectVal = document.getElementById("filterProject").value;
+  filterCompanyVal = document.getElementById("filterCompany").value;
+  filterMarketingVal = document.getElementById("filterMarketing").value;
+  filterStatusVal = document.getElementById("filterStatus").value;
+  filterCheckedVal = document.getElementById("filterChecked").value;
+  filterSignedVal = document.getElementById("filterSigned").value;
+
+  const btn = document.getElementById("filterToggleBtn");
+  if(filterProjectVal || filterCompanyVal || filterMarketingVal || filterStatusVal || filterDateStartVal || filterDateEndVal || filterCheckedVal || filterSignedVal) {
+    btn.style.color = "var(--brand)";
+    btn.style.borderColor = "var(--brand)";
+  } else {
+    btn.style.color = "";
+    btn.style.borderColor = "";
+  }
+
+  currentPage = 1;
+  renderReportTable();
+}
+
+function resetFilters() {
+  document.getElementById("filterProject").value = "";
+  document.getElementById("filterCompany").value = "";
+  document.getElementById("filterMarketing").value = "";
+  document.getElementById("filterStatus").value = "";
+  if(datePickerInstance) datePickerInstance.clear();
+  document.getElementById("filterChecked").value = "";
+  document.getElementById("filterSigned").value = "";
+
+  filterProjectVal = "";
+  filterCompanyVal = "";
+  filterMarketingVal = "";
+  filterStatusVal = "";
+  filterDateStartVal = "";
+  filterDateEndVal = "";
+  filterCheckedVal = "";
+  filterSignedVal = "";
+
+  populateCompanyDropdown();
+
+  const btn = document.getElementById("filterToggleBtn");
+  btn.style.color = "";
+  btn.style.borderColor = "";
+
+  currentPage = 1;
+  renderReportTable();
+}
+
+function getEffectiveCounts(u) {
+  let fruTotal = u.signersFRU.length;
+  let fruSignedAll = u.signersFRU.every(s => s.signed);
+  let fruCheckedAll = u.signersFRU.every(s => s.checked);
+
+  let fruSignedCount = u.signersFRU.filter(s => s.signed).length;
+  let fruCheckedCount = u.signersFRU.filter(s => s.checked).length;
+
+  let fpuSignedVal = (u.fpu.uploaded && u.fpu.signed) ? 1 : 0;
+  let fpuCheckedVal = (u.fpu.uploaded && u.fpu.checked) ? 1 : 0;
+
+  let psSignedVal = (u.ps.uploaded && u.ps.signed) ? 1 : 0;
+  let psCheckedVal = (u.ps.uploaded && u.ps.checked) ? 1 : 0;
+
+  let signedTuntasCount = (fruSignedAll ? 1 : 0) + fpuSignedVal + psSignedVal;
+  let checkedTuntasCount = (fruCheckedAll ? 1 : 0) + fpuCheckedVal + psCheckedVal;
+  let maxDocs = 3;
+
+  return { fruTotal, fruSignedCount, fruCheckedCount, fpuSignedVal, fpuCheckedVal, psSignedVal, psCheckedVal, signedTuntasCount, checkedTuntasCount, maxDocs };
+}
+
+function getBadgeClass(current, max) {
+  if (current === max && max > 0) return 'success';
+  return 'danger';
+}
+
+function getFilteredKeys(isForDownload = false) {
+  const hasActiveFilter = filterProjectVal || filterCompanyVal || filterMarketingVal || filterStatusVal || filterDateStartVal || filterDateEndVal || filterCheckedVal || filterSignedVal || searchQuery.trim() !== "";
+  
+  if (!hasActiveFilter && !isForDownload) {
+    return [];
+  }
+
+  let keys = Object.keys(unitsDatabase);
+  keys = keys.filter(key => {
+    const u = unitsDatabase[key];
+    const searchStr = `${u.rsv} ${u.createDate} ${u.status} ${u.company} ${u.project} ${u.unit} ${u.name} ${u.marketing}`.toLowerCase();
+    
+    if(searchQuery && !searchStr.includes(searchQuery.toLowerCase())) return false;
+    
+    if (!filterProjectVal || filterProjectVal === "") {
+      if (filterCompanyVal) return false;
+    } else {
+      if (u.project !== filterProjectVal) return false;
+      if (filterCompanyVal && u.company !== filterCompanyVal) return false;
+    }
+
+    if(filterMarketingVal && u.marketing !== filterMarketingVal) return false;
+    if(filterStatusVal && u.status !== filterStatusVal) return false;
+
+    if(filterDateStartVal || filterDateEndVal) {
+      const uDateTimestamp = parseDateStr(u.createDate);
+      if(filterDateStartVal) {
+        const startTimestamp = new Date(filterDateStartVal).setHours(0,0,0,0);
+        if(uDateTimestamp < startTimestamp) return false;
+      }
+      if(filterDateEndVal) {
+        const endTimestamp = new Date(filterDateEndVal).setHours(23,59,59,999);
+        if(uDateTimestamp > endTimestamp) return false;
+      }
+    }
+
+    const counts = getEffectiveCounts(u);
+    if(filterCheckedVal === 'complete' && counts.checkedTuntasCount !== counts.maxDocs) return false;
+    if(filterCheckedVal === 'partial' && (counts.checkedTuntasCount === 0 || counts.checkedTuntasCount === counts.maxDocs)) return false;
+    if(filterCheckedVal === 'none' && counts.checkedTuntasCount !== 0) return false;
+
+    if(filterSignedVal === 'complete' && counts.signedTuntasCount !== counts.maxDocs) return false;
+    if(filterSignedVal === 'partial' && (counts.signedTuntasCount === 0 || counts.signedTuntasCount === counts.maxDocs)) return false;
+    if(filterSignedVal === 'none' && counts.signedTuntasCount !== 0) return false;
+
+    return true;
+  });
+
+  if (currentSortColumn !== null) {
+    keys.sort((keyA, keyB) => {
+      const uA = unitsDatabase[keyA];
+      const uB = unitsDatabase[keyB];
+      let valA = "", valB = "";
+
+      if (currentSortColumn === 0) { valA = uA.rsv; valB = uB.rsv; }
+      else if (currentSortColumn === 1) { valA = parseDateStr(uA.createDate); valB = parseDateStr(uB.createDate); }
+      else if (currentSortColumn === 2) { valA = uA.status; valB = uB.status; }
+      else if (currentSortColumn === 3) { valA = uA.company; valB = uB.company; }
+      else if (currentSortColumn === 4) { valA = uA.project; valB = uB.project; }
+      else if (currentSortColumn === 5) { valA = uA.unit; valB = uB.unit; }
+      else if (currentSortColumn === 6) { valA = uA.name; valB = uB.name; }
+      else if (currentSortColumn === 7) { valA = uA.marketing; valB = uB.marketing; }
+      else if (currentSortColumn === 8) { valA = getEffectiveCounts(uA).signedTuntasCount; valB = getEffectiveCounts(uB).signedTuntasCount; }
+      else if (currentSortColumn === 9) { valA = getEffectiveCounts(uA).checkedTuntasCount; valB = getEffectiveCounts(uB).checkedTuntasCount; }
+
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return currentSortDirection === "asc" ? valA - valB : valB - valA;
+      }
+      let strA = String(valA), strB = String(valB);
+      return currentSortDirection === "asc" ? strA.localeCompare(strB, 'id', {numeric: true}) : strB.localeCompare(strA, 'id', {numeric: true});
+    });
+  }
+  return keys;
+}
+
+function renderReportTable() {
+  const hasActiveFilter = filterProjectVal || filterCompanyVal || filterMarketingVal || filterStatusVal || filterDateStartVal || filterDateEndVal || filterCheckedVal || filterSignedVal || searchQuery.trim() !== "";
+  const filteredKeys = getFilteredKeys(false);
+
+  let uiHtml = "";
+
+  if (!hasActiveFilter) {
+    uiHtml = `
+      <tr style="height: 100%;">
+        <td colspan="10" style="border: none; background: transparent; display: flex; align-items: center; justify-content: center; width: 100%;">
+          <div class="blank-state-container">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--muted-foreground); opacity:0.6;"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+            <span>Belum ada data, silahkan filter data terlebih dahulu</span>
+          </div>
+        </td>
+      </tr>
+    `;
+    document.getElementById("reportTableBody").innerHTML = uiHtml;
+    document.getElementById("paginationContainer").innerHTML = "";
+    return;
+  }
+
+  const totalFiltered = filteredKeys.length;
+  const totalPages = Math.ceil(totalFiltered / itemsPerPage) || 1;
+  if (currentPage > totalPages) currentPage = totalPages;
+
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, totalFiltered);
+  const pageKeys = filteredKeys.slice(startIndex, endIndex);
+
+  if (pageKeys.length === 0) {
+    uiHtml = `
+      <tr style="height: 100%;">
+        <td colspan="10" style="border: none; background: transparent; display: flex; align-items: center; justify-content: center; width: 100%;">
+          <div class="blank-state-container">
+            <span>Data tidak ditemukan untuk filter tersebut.</span>
+          </div>
+        </td>
+      </tr>
+    `;
+    document.getElementById("reportTableBody").innerHTML = uiHtml;
+    document.getElementById("paginationContainer").innerHTML = "";
+    return;
+  }
+
+  pageKeys.forEach(key => {
+    const u = unitsDatabase[key];
+    const counts = getEffectiveCounts(u);
+
+    let statusBadge = u.status === 'Paid' 
+      ? '<span class="badge status-badge status-paid">Paid</span>' 
+      : '<span class="badge status-badge status-confirm2">Confirm 2</span>';
+
+    let fruAllSigned = u.signersFRU.every(s => s.signed);
+    let fruAllChecked = u.signersFRU.every(s => s.checked);
+
+    let subSignersSignedHtml = "";
+    let subSignersCheckedHtml = "";
+
+    if (u.signersFRU.length === 1) {
+      let s = u.signersFRU[0];
+      subSignersSignedHtml = `
+        <div class="sub-signer-line">
+          <div class="sub-signer-top">
+            <span style="font-weight:600; color:#334155;">Form Reservasi Unit (FRU)</span>
+            <span style="color:${s.signed ? '#166534' : '#991b1b'}; font-weight:600;">${s.signed ? 'Sudah Ditandatangani' : 'Belum Ditandatangani'}</span>
+          </div>
+          ${s.signed ? `<div class="sub-signer-meta"><span>Verifikator: ${escNormal(s.verifier)}</span><span>Tanggal Verifikasi:${escNormal(s.dateSign)}</span></div>` : ''}
+        </div>`;
+
+      subSignersCheckedHtml = `
+        <div class="sub-signer-line">
+          <div class="sub-signer-top">
+            <span style="font-weight:600; color:#334155;">Form Reservasi Unit (FRU)</span>
+            <span style="color:${s.checked ? '#166534' : '#991b1b'}; font-weight:600;">${s.checked ? 'Sudah Diperiksa' : 'Belum Diperiksa'}</span>
+          </div>
+          ${s.checked ? `<div class="sub-signer-meta"><span>Verifikator: ${escNormal(s.verifier)}</span><span>Tanggal Verifikasi:${escNormal(s.dateCheck)}</span></div>` : ''}
+        </div>`;
+    } else {
+      // Jika > 1, bungkus dalam .sub-signers-clean agar ada 1 garis vertikal panjang di sebelah kiri membawahi seluruh sub-item
+      subSignersSignedHtml = `<div class="sub-signers-clean">` + u.signersFRU.map((s, idx) => `
+        <div class="sub-signer-line">
+          <div class="sub-signer-top">
+            <span style="font-weight:600; color:#334155;">Form Reservasi Unit ${idx + 1}</span>
+            <span style="color:${s.signed ? '#166534' : '#991b1b'}; font-weight:600;">${s.signed ? 'Sudah Ditandatangani' : 'Belum Ditandatangani'}</span>
+          </div>
+          ${s.signed ? `<div class="sub-signer-meta"><span>Verifikator: ${escNormal(s.verifier)}</span><span>Tanggal Verifikasi:${escNormal(s.dateSign)}</span></div>` : ''}
+        </div>
+      `).join("") + `</div>`;
+
+      subSignersCheckedHtml = `<div class="sub-signers-clean">` + u.signersFRU.map((s, idx) => `
+        <div class="sub-signer-line">
+          <div class="sub-signer-top">
+            <span style="font-weight:600; color:#334155;">Form Reservasi Unit ${idx + 1}</span>
+            <span style="color:${s.checked ? '#166534' : '#991b1b'}; font-weight:600;">${s.checked ? 'Sudah Diperiksa' : 'Belum Diperiksa'}</span>
+          </div>
+          ${s.checked ? `<div class="sub-signer-meta"><span>Verifikator: ${escNormal(s.verifier)}</span><span>Tanggal Verifikasi:${escNormal(s.dateCheck)}</span></div>` : ''}
+        </div>
+      `).join("") + `</div>`;
+    }
+
+    let fpuSignedEffective = u.fpu.uploaded && u.fpu.signed;
+    let fpuCheckedEffective = u.fpu.uploaded && u.fpu.checked;
+    let psSignedEffective = u.ps.uploaded && u.ps.signed;
+    let psCheckedEffective = u.ps.uploaded && u.ps.checked;
+
+    let fpuSignedText = `<div class="sub-signer-line"><div class="sub-signer-top"><span style="font-weight:600; color:#334155;">Form Pemesanan Unit (FPU)</span><span style="color:${fpuSignedEffective ? '#166534' : '#991b1b'}; font-weight:600;">${fpuSignedEffective ? 'Sudah Ditandatangani' : 'Belum Ditandatangani'}</span></div>${fpuSignedEffective ? `<div class="sub-signer-meta"><span>Verifikator: ${escNormal(u.fpu.verifier)}</span><span>Tanggal Verifikasi:${escNormal(u.fpu.dateSign)}</span></div>` : ''}</div>`;
+    let psSignedText = `<div class="sub-signer-line"><div class="sub-signer-top"><span style="font-weight:600; color:#334155;">Payment Schedule (PS)</span><span style="color:${psSignedEffective ? '#166534' : '#991b1b'}; font-weight:600;">${psSignedEffective ? 'Sudah Ditandatangani' : 'Belum Ditandatangani'}</span></div>${psSignedEffective ? `<div class="sub-signer-meta"><span>Verifikator: ${escNormal(u.ps.verifier)}</span><span>Tanggal Verifikasi:${escNormal(u.ps.dateSign)}</span></div>` : ''}</div>`;
+    let fpuCheckedText = `<div class="sub-signer-line"><div class="sub-signer-top"><span style="font-weight:600; color:#334155;">Form Pemesanan Unit (FPU)</span><span style="color:${fpuCheckedEffective ? '#166534' : '#991b1b'}; font-weight:600;">${fpuCheckedEffective ? 'Sudah Diperiksa' : 'Belum Diperiksa'}</span></div>${fpuCheckedEffective ? `<div class="sub-signer-meta"><span>Verifikator: ${escNormal(u.fpu.verifier)}</span><span>Tanggal Verifikasi:${escNormal(u.fpu.dateCheck)}</span></div>` : ''}</div>`;
+    let psCheckedText = `<div class="sub-signer-line"><div class="sub-signer-top"><span style="font-weight:600; color:#334155;">Payment Schedule (PS)</span><span style="color:${psCheckedEffective ? '#166534' : '#991b1b'}; font-weight:600;">${psCheckedEffective ? 'Sudah Diperiksa' : 'Belum Diperiksa'}</span></div>${psCheckedEffective ? `<div class="sub-signer-meta"><span>Verifikator: ${escNormal(u.ps.verifier)}</span><span>Tanggal Verifikasi:${escNormal(u.ps.dateCheck)}</span></div>` : ''}</div>`;
+
+    let ttdHoverList = "";
+    let checkHoverList = "";
+
+    if (u.signersFRU.length === 1) {
+      let s = u.signersFRU[0];
+      let fruSignBlockClass = s.signed ? 'success' : 'danger';
+      let fruCheckBlockClass = s.checked ? 'success' : 'danger';
+      ttdHoverList = `<div class="doc-card-block ${fruSignBlockClass}">${subSignersSignedHtml}</div><div class="doc-card-block ${fpuSignedEffective ? 'success' : 'danger'}">${fpuSignedText}</div><div class="doc-card-block ${psSignedEffective ? 'success' : 'danger'}">${psSignedText}</div>`;
+      checkHoverList = `<div class="doc-card-block ${fruCheckBlockClass}">${subSignersCheckedHtml}</div><div class="doc-card-block ${fpuCheckedEffective ? 'success' : 'danger'}">${fpuCheckedText}</div><div class="doc-card-block ${psCheckedEffective ? 'success' : 'danger'}">${psCheckedText}</div>`;
+    } else {
+      ttdHoverList = `<div class="doc-card-block ${fruAllSigned ? 'success' : 'danger'}"><div class="doc-card-header"><span>Form Reservasi Unit (FRU)</span><span style="color:${fruAllSigned ? '#166534' : '#991b1b'};">${fruAllSigned ? 'Sudah Lengkap' : 'Belum Lengkap'}</span></div>${subSignersSignedHtml}</div><div class="doc-card-block ${fpuSignedEffective ? 'success' : 'danger'}">${fpuSignedText}</div><div class="doc-card-block ${psSignedEffective ? 'success' : 'danger'}">${psSignedText}</div>`;
+      checkHoverList = `<div class="doc-card-block ${fruAllChecked ? 'success' : 'danger'}"><div class="doc-card-header"><span>Form Reservasi Unit (FRU)</span><span style="color:${fruAllChecked ? '#166534' : '#991b1b'};">${fruAllChecked ? 'Sudah Lengkap' : 'Belum Lengkap'}</span></div>${subSignersCheckedHtml}</div><div class="doc-card-block ${fpuCheckedEffective ? 'success' : 'danger'}">${fpuCheckedText}</div><div class="doc-card-block ${psCheckedEffective ? 'success' : 'danger'}">${psCheckedText}</div>`;
+    }
+
+    let fruSignedClass = getBadgeClass(counts.fruSignedCount, counts.fruTotal);
+    let fpuSignedClass = getBadgeClass(counts.fpuSignedVal, 1);
+    let psSignedClass = getBadgeClass(counts.psSignedVal, 1);
+
+    let fruCheckedClass = getBadgeClass(counts.fruCheckedCount, counts.fruTotal);
+    let fpuCheckedClass = getBadgeClass(counts.fpuCheckedVal, 1);
+    let psCheckedClass = getBadgeClass(counts.psCheckedVal, 1);
+
+    let displayProjectName = getFormattedProjectName(u.project);
+
+    uiHtml += `
+    <tr>
+      <td><code>${esc(u.rsv)}</code></td>
+      <td class="date-cell">${escNormal(u.createDate)}</td>
+      <td>${statusBadge}</td>
+      <td>${esc(u.company)}</td>
+      <td>${esc(displayProjectName)}</td>
+      <td>${esc(u.unit)}</td>
+      <td class="multi-name-cell"><div class="multi-name-wrapper">${esc(u.name)}</div></td>
+      <td class="multi-name-cell"><div class="multi-name-wrapper">${esc(u.marketing)}</div></td>
+      <td>
+        <div class="hover-wrap" data-title="RINCIAN DOCUMENT SIGNED" data-content='${escNormal(ttdHoverList)}'>
+          <div class="badge-row-stack">
+            <span class="badge ${fruSignedClass}">FRU (${counts.fruSignedCount}/${counts.fruTotal})</span>
+            <span class="badge ${fpuSignedClass}">FPU (${counts.fpuSignedVal}/1)</span>
+            <span class="badge ${psSignedClass}">PS (${counts.psSignedVal}/1)</span>
+          </div>
+        </div>
+      </td>
+      <td>
+        <div class="hover-wrap" data-title="RINCIAN DOCUMENT CHECKED" data-content='${escNormal(checkHoverList)}'>
+          <div class="badge-row-stack">
+            <span class="badge ${fruCheckedClass}">FRU (${counts.fruCheckedCount}/${counts.fruTotal})</span>
+            <span class="badge ${fpuCheckedClass}">FPU (${counts.fpuCheckedVal}/1)</span>
+            <span class="badge ${psCheckedClass}">PS (${counts.psCheckedVal}/1)</span>
+          </div>
+        </div>
+      </td>
+    </tr>`;
+  });
+
+  const remainingRows = itemsPerPage - pageKeys.length;
+  for (let i = 0; i < remainingRows; i++) {
+    uiHtml += `<tr class="empty-row"><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>`;
+  }
+
+  document.getElementById("reportTableBody").innerHTML = uiHtml;
+
+  let paginationHtml = "";
+  paginationHtml += `<button class="page-btn" onclick="goToPage(1)" ${currentPage === 1 ? 'disabled' : ''}>&laquo;</button>`;
+  paginationHtml += `<button class="page-btn" onclick="goToPage(currentPage - 1)" ${currentPage === 1 ? 'disabled' : ''}>&lsaquo;</button>`;
+  for(let p = 1; p <= totalPages; p++) {
+    paginationHtml += `<button class="page-btn ${p === currentPage ? 'active' : ''}" onclick="goToPage(${p})">${p}</button>`;
+  }
+  paginationHtml += `<button class="page-btn" onclick="goToPage(currentPage + 1)" ${currentPage === totalPages ? 'disabled' : ''}>&rsaquo;</button>`;
+  paginationHtml += `<button class="page-btn" onclick="goToPage(${totalPages})" ${currentPage === totalPages ? 'disabled' : ''}>&raquo;</button>`;
+
+  document.getElementById("paginationContainer").innerHTML = paginationHtml;
+  document.querySelectorAll(".sort-icon").forEach((el) => { el.innerHTML = SORT_ICON_SVG; });
+  initGlobalTooltips();
+}
+
+function renderLogTable() {
+  let logHtml = "";
+  if (reportLogsData.length === 0) {
+    logHtml = `
+      <tr style="height: 100%;">
+        <td colspan="8" style="border: none; background: transparent; display: flex; align-items: center; justify-content: center; width: 100%;">
+          <div class="blank-state-container">
+            <span>Belum ada log report yang diunduh.</span>
+          </div>
+        </td>
+      </tr>
+    `;
+  } else {
+    reportLogsData.forEach((log) => {
+      let statusBadge = log.status === "COMPLETED" 
+        ? '<span class="badge success" style="justify-content:center;">COMPLETED</span>' 
+        : (log.status === "FAILED" ? '<span class="badge danger" style="justify-content:center;">FAILED</span>' : '<span class="badge warning" style="justify-content:center;">ON PROGRESS</span>');
+
+      let actionBtn = log.status === "COMPLETED"
+        ? `<button type="button" class="tool-btn" style="height:1.6rem; width:1.6rem;" onclick="executeDownloadFile('${log.fileName}')" title="Download"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>`
+        : `<span style="color:var(--muted-foreground);">-</span>`;
+
+      logHtml += `
+        <tr>
+          <td>${escNormal(log.fileName)}</td>
+          <td>${escNormal(log.asOfDate)}</td>
+          <td>${escNormal(log.fromDate)}</td>
+          <td>${escNormal(log.toDate)}</td>
+          <td>${escNormal(log.expiredDate)}</td>
+          <td>${escNormal(log.reportType)}</td>
+          <td>${statusBadge}</td>
+          <td>${actionBtn}</td>
+        </tr>
+      `;
+    });
+  }
+  document.getElementById("logTableBody").innerHTML = logHtml;
+}
+
+function showToast() {
+  const container = document.getElementById("toastContainer");
+  const toastId = "toast_" + Date.now();
+  const toastHtml = `
+    <div class="toast-card" id="${toastId}">
+      <div class="toast-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <div class="toast-content">
+        <span class="toast-title">Berhasil</span>
+        <span class="toast-desc">Data created correctly</span>
+      </div>
+      <button class="toast-close" onclick="document.getElementById('${toastId}').remove()">&times;</button>
+    </div>
+  `;
+  container.insertAdjacentHTML('beforeend', toastHtml);
+  setTimeout(() => {
+    const el = document.getElementById(toastId);
+    if(el) el.remove();
+  }, 4000);
+}
+
+function triggerDownloadReport() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const dateStrFile = `${year}-${month}-${day}`;
+  const fileName = `RMD_${dateStrFile}.xls`;
+
+  let asOfDateVal = "-";
+  let fromDateVal = "-";
+  let toDateVal = "-";
+
+  if (filterDateStartVal && filterDateEndVal) {
+    if (filterDateStartVal === filterDateEndVal) {
+      asOfDateVal = filterDateStartVal;
+    } else {
+      fromDateVal = filterDateStartVal;
+      toDateVal = filterDateEndVal;
+    }
+  } else {
+    const filteredKeys = getFilteredKeys(true);
+    if (filteredKeys.length > 0) {
+      let timestamps = filteredKeys.map(k => parseDateStr(unitsDatabase[k].createDate));
+      let minTs = Math.min(...timestamps);
+      let maxTs = Math.max(...timestamps);
+
+      let minDateObj = new Date(minTs);
+      let maxDateObj = new Date(maxTs);
+
+      let formatYMD = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      
+      if (minTs === maxTs) {
+        asOfDateVal = formatYMD(minDateObj);
+      } else {
+        fromDateVal = formatYMD(minDateObj);
+        toDateVal = formatYMD(maxDateObj);
+      }
+    } else {
+      asOfDateVal = dateStrFile;
+    }
+  }
+
+  const expiredDateObj = new Date(now.getTime() + 7 * 86400000);
+  const expYear = expiredDateObj.getFullYear();
+  const expMonth = String(expiredDateObj.getMonth() + 1).padStart(2, '0');
+  const expDay = String(expiredDateObj.getDate()).padStart(2, '0');
+  const expiredDateStr = `${expYear}-${expMonth}-${expDay}`;
+
+  const newLog = {
+    fileName: fileName,
+    asOfDate: asOfDateVal,
+    fromDate: fromDateVal,
+    toDate: toDateVal,
+    expiredDate: expiredDateStr,
+    reportType: "-",
+    status: "ON PROGRESS"
+  };
+
+  reportLogsData.unshift(newLog);
+  renderLogTable();
+  showToast();
+
+  setTimeout(() => {
+    newLog.status = "COMPLETED";
+    renderLogTable();
+  }, 2000);
+}
+
+function executeDownloadFile(fileName) {
+  const filteredKeys = getFilteredKeys(true);
+  let rowsHtml = "";
+  filteredKeys.forEach(key => {
+    const u = unitsDatabase[key];
+    const counts = getEffectiveCounts(u);
+
+    let fruSignComplete = counts.fruSignedCount === counts.fruTotal && counts.fruTotal > 0;
+    let fruCheckComplete = counts.fruCheckedCount === counts.fruTotal && counts.fruTotal > 0;
+    let fpuSignComplete = counts.fpuSignedVal === 1;
+    let psSignComplete = counts.psSignedVal === 1;
+    let fpuCheckComplete = counts.fpuCheckedVal === 1;
+    let psCheckComplete = counts.psCheckedVal === 1;
+
+    const latestFruSigner = u.signersFRU[u.signersFRU.length - 1];
+    let fruSignVerifier = fruSignComplete && latestFruSigner && latestFruSigner.verifier ? latestFruSigner.verifier : '-';
+    let fruSignDate = fruSignComplete && latestFruSigner ? latestFruSigner.dateSign : '-';
+    let fruCheckVerifier = fruCheckComplete && latestFruSigner && latestFruSigner.verifier ? latestFruSigner.verifier : '-';
+    let fruCheckDate = fruCheckComplete && latestFruSigner ? latestFruSigner.dateCheck : '-';
+
+    let fpuSignVerifier = fpuSignComplete ? (u.fpu.verifier || u.verifier) : '-';
+    let fpuSignDateVal = fpuSignComplete ? u.fpu.dateSign : '-';
+    let psSignVerifier = psSignComplete ? (u.ps.verifier || u.verifier) : '-';
+    let psSignDateVal = psSignComplete ? u.ps.dateSign : '-';
+
+    let fpuCheckVerifier = fpuCheckComplete ? (u.fpu.verifier || u.verifier) : '-';
+    let fpuCheckDateVal = fpuCheckComplete ? u.fpu.dateCheck : '-';
+    let psCheckVerifier = psCheckComplete ? (u.ps.verifier || u.verifier) : '-';
+    let psCheckDateVal = psCheckComplete ? u.ps.dateCheck : '-';
+
+    let bgFruSign = fruSignComplete ? '#dcfce7' : '#fee2e2';
+    let bgFpuSign = fpuSignComplete ? '#dcfce7' : '#fee2e2';
+    let bgPsSign = psSignComplete ? '#dcfce7' : '#fee2e2';
+
+    let bgFruCheck = fruCheckComplete ? '#dcfce7' : '#fee2e2';
+    let bgFpuCheck = fpuCheckComplete ? '#dcfce7' : '#fee2e2';
+    let bgPsCheck = psCheckComplete ? '#dcfce7' : '#fee2e2';
+
+    let displayProjectName = getFormattedProjectName(u.project);
+
+    rowsHtml += `
+      <tr>
+        <td style="font-size:10pt; border:1px solid #000; text-align:left; vertical-align:middle; padding:4px 6px;">${esc(u.rsv)}</td>
+        <td style="font-size:10pt; border:1px solid #000; text-align:left; vertical-align:middle; padding:4px 6px; mso-number-format:'\@';">${formatDateToDDMMYYYY(u.createDate)}</td>
+        <td style="font-size:10pt; border:1px solid #000; text-align:left; vertical-align:middle; padding:4px 6px;">${esc(u.status)}</td>
+        <td style="font-size:10pt; border:1px solid #000; text-align:left; vertical-align:middle; padding:4px 6px;">${esc(u.company)}</td>
+        <td style="font-size:10pt; border:1px solid #000; text-align:left; vertical-align:middle; padding:4px 6px;">${esc(displayProjectName)}</td>
+        <td style="font-size:10pt; border:1px solid #000; text-align:left; vertical-align:middle; padding:4px 6px;">${esc(u.unit)}</td>
+        <td style="font-size:10pt; border:1px solid #000; text-align:left; vertical-align:middle; padding:4px 6px;">${esc(u.name)}</td>
+        <td style="font-size:10pt; border:1px solid #000; text-align:left; vertical-align:middle; padding:4px 6px;">${esc(u.marketing)}</td>
+        <td style="font-size:9pt; border:1px solid #000; text-align:left; vertical-align:middle; padding:4px 6px; background-color:${bgFruSign};">FRU (${counts.fruSignedCount}/${counts.fruTotal})<br>Verifikator: ${fruSignVerifier}<br>Tanggal Verifikasi: ${fruSignDate}</td>
+        <td style="font-size:9pt; border:1px solid #000; text-align:left; vertical-align:middle; padding:4px 6px; background-color:${bgFpuSign};">FPU (${counts.fpuSignedVal}/1)<br>Verifikator: ${fpuSignVerifier}<br>Tanggal Verifikasi: ${fpuSignDateVal}</td>
+        <td style="font-size:9pt; border:1px solid #000; text-align:left; vertical-align:middle; padding:4px 6px; background-color:${bgPsSign};">PS (${counts.psSignedVal}/1)<br>Verifikator: ${psSignVerifier}<br>Tanggal Verifikasi: ${psSignDateVal}</td>
+        <td style="font-size:9pt; border:1px solid #000; text-align:left; vertical-align:middle; padding:4px 6px; background-color:${bgFruCheck};">FRU (${counts.fruCheckedCount}/${counts.fruTotal})<br>Verifikator: ${fruCheckVerifier}<br>Tanggal Verifikasi: ${fruCheckDate}</td>
+        <td style="font-size:9pt; border:1px solid #000; text-align:left; vertical-align:middle; padding:4px 6px; background-color:${bgFpuCheck};">FPU (${counts.fpuCheckedVal}/1)<br>Verifikator: ${fruCheckVerifier}<br>Tanggal Verifikasi: ${fpuCheckDateVal}</td>
+        <td style="font-size:9pt; border:1px solid #000; text-align:left; vertical-align:middle; padding:4px 6px; background-color:${bgPsCheck};">PS (${counts.psCheckedVal}/1)<br>Verifikator: ${psSignVerifier}<br>Tanggal Verifikasi: ${psSignDateVal}</td>
+      </tr>
+    `;
+  });
+
+  const fullTableHtml = `<table border="1" style="font-size:10pt; border-collapse:collapse;"><thead><tr><th colspan="14" style="font-size:14pt; font-weight:bold; border:none; text-align:left; padding:8px 4px;">Report Monitoring Dokumen</th></tr><tr><th colspan="14" style="border:none; height:15px;"></th></tr><tr style="background-color:#f1f5f9; text-align:center; vertical-align:middle;"><th rowspan="2" style="padding:6px; text-align:center; vertical-align:middle;">KODE RESERVASI</th><th rowspan="2" style="padding:6px; text-align:center; vertical-align:middle;">TANGGAL CONFIRM 2</th><th rowspan="2" style="padding:6px; text-align:center; vertical-align:middle;">STATUS</th><th rowspan="2" style="padding:6px; text-align:center; vertical-align:middle;">COMPANY</th><th rowspan="2" style="padding:6px; text-align:center; vertical-align:middle;">PROJECT</th><th rowspan="2" style="padding:6px; text-align:center; vertical-align:middle;">KODE UNIT</th><th rowspan="2" style="padding:6px; text-align:center; vertical-align:middle;">NAMA KONSUMEN</th><th rowspan="2" style="padding:6px; text-align:center; vertical-align:middle;">NAMA MARKETING</th><th colspan="3" style="padding:6px; text-align:center; vertical-align:middle;">DOCUMENT SIGNED</th><th colspan="3" style="padding:6px; text-align:center; vertical-align:middle;">DOCUMENT CHECKED</th></tr><tr style="background-color:#f1f5f9; text-align:center; vertical-align:middle;"><th style="padding:6px; text-align:center; vertical-align:middle;">FRU</th><th style="padding:6px; text-align:center; vertical-align:middle;">FPU</th><th style="padding:6px; text-align:center; vertical-align:middle;">PS</th><th style="padding:6px; text-align:center; vertical-align:middle;">FRU</th><th style="padding:6px; text-align:center; vertical-align:middle;">FPU</th><th style="padding:6px; text-align:center; vertical-align:middle;">PS</th></tr></thead><tbody>${rowsHtml}</tbody></table>`;
+
+  const uri = 'data:application/vnd.ms-excel;charset=utf-8,' + encodeURIComponent('\ufeff' + fullTableHtml);
+  const a = document.createElement('a');
+  a.href = uri;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+function initGlobalTooltips() {
+  const tooltip = document.getElementById("globalTooltip");
+  document.querySelectorAll(".hover-wrap").forEach(wrap => {
+    wrap.addEventListener("mouseenter", () => {
+      const title = wrap.getAttribute("data-title");
+      const content = wrap.getAttribute("data-content");
+      if(title && content) {
+        tooltip.innerHTML = `<div class="hover-card-title">${title}</div><div class="hover-card-list">${content}</div>`;
+        tooltip.style.display = "block";
+        const rect = wrap.getBoundingClientRect();
+        const tipRect = tooltip.getBoundingClientRect();
+        let leftPos = rect.left - tipRect.width - 10;
+        if (leftPos < 15) leftPos = rect.right + 10;
+        let topPos = rect.top + (rect.height / 2) - (tipRect.height / 2);
+        if (topPos < 10) topPos = 10;
+        else if (topPos + tipRect.height > window.innerHeight - 10) topPos = window.innerHeight - tipRect.height - 10;
+        tooltip.style.left = leftPos + "px";
+        tooltip.style.top = topPos + "px";
+      }
+    });
+    wrap.addEventListener("mouseleave", () => { tooltip.style.display = "none"; });
+  });
+}
+
+function handleSearch() {
+  searchQuery = document.getElementById("searchInput").value;
+  currentPage = 1;
+  renderReportTable();
+}
+
+function goToPage(p) {
+  currentPage = p;
+  renderReportTable();
+}
+
+const SORT_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg>`;
+
+function sortGlobal(columnIndex) {
+  if (currentSortColumn === columnIndex) {
+    currentSortDirection = currentSortDirection === "asc" ? "desc" : "asc";
+  } else {
+    currentSortColumn = columnIndex;
+    currentSortDirection = "asc";
+  }
+  document.querySelectorAll(".sort-icon").forEach(el => el.innerHTML = SORT_ICON_SVG);
+  currentPage = 1;
+  renderReportTable();
+}
+</script>
+</body>
+</html>
