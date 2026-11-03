@@ -1,0 +1,1233 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VS SAD — Validasi Penjualan</title>
+<!-- Flatpickr CSS & JS CDN untuk Date Range Picker -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/l10n/id.js"></script>
+
+<style>
+:root{--radius:.25rem;--background:oklch(.975 .002 250);--foreground:#000000;--brand:#2563eb;--brand-foreground:oklch(.99 0 0);--brand-soft:oklch(.97 .02 262);--danger:oklch(.6 .22 25);--card:oklch(1 0 0);--popover:oklch(1 0 0);--popover-foreground:#000000;--muted-foreground:#000000;--border:oklch(.929 .013 255.508);--ring:oklch(.704 .04 256.788)}
+*{box-sizing:border-box;border-color:var(--border)}html,body{margin:0;height:100vh;overflow:hidden;}body{background:var(--background);color:#000000;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}button,input,select,textarea{font:inherit;color:#000000;}button{cursor:pointer}a{color:inherit;text-decoration:none}
+.hidden{display:none !important;}
+
+/* App Layout */
+.app{display:flex;height:100vh;width:100vw;background:var(--background);overflow:hidden;}
+
+/* Sidebar */
+.sidebar{display:flex;width:3.25rem;flex:0 0 3.25rem;flex-direction:column;align-items:center;justify-content:space-between;background:#0f172a;padding:0.75rem 0;height:100vh;position:sticky;top:0;left:0;z-index:50;}
+.sidebar-top{display:flex;flex-direction:column;align-items:center;gap:0.75rem;width:100%;}
+.sidebar-bottom{display:flex;flex-direction:column;align-items:center;width:100%;padding:0 0.4rem;position:relative;}
+
+.side-icon{display:inline-flex;align-items:center;justify-content:center;width:2.25rem;height:2.25rem;border-radius:0.25rem;color:#94a3b8;background:transparent;}
+.side-icon.active{background:var(--brand);color:#ffffff;border-radius:0.25rem;}
+.side-icon:hover{background:#1e293b;color:#ffffff;cursor:pointer;}
+
+/* Main Area */
+main{flex:1;height:100vh;padding:0.875rem 1.25rem;display:flex;flex-direction:column;overflow:hidden;position:relative;}
+
+/* Page Views Switcher Container */
+.view-container { display: none; flex: 1; flex-direction: column; overflow: hidden; height: 100%; }
+.view-container.active { display: flex; }
+
+/* Page Header & Top Toolbar */
+.page-header{display:flex;flex-direction:column;margin-bottom:0.6rem;gap:0.5rem;flex-shrink:0;}
+h1{margin:0;font-size:0.95rem;font-weight:600;color:#000000;text-transform:none;display:flex;align-items:center;}
+
+.header-bottom-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.top-toolbar{display:flex;align-items:center;gap:0.5rem;position:relative;}
+.search-box{position:relative;display:flex;align-items:center;}
+.search-box input{height:2rem;padding:0 0.75rem 0 2rem;border:1px solid var(--border);border-radius:var(--radius);font-size:0.75rem;outline:none;width:180px;color:#000000;background:#ffffff;font-weight:normal;text-transform:none;}
+.search-box input:focus{border-color:var(--ring);box-shadow:0 0 0 1px var(--ring);}
+.search-icon{position:absolute;left:0.6rem;color:#000000;pointer-events:none;}
+
+.tool-btn{display:inline-flex;align-items:center;justify-content:center;height:2rem;width:2rem;border:1px solid var(--border);border-radius:var(--radius);background:#ffffff;color:#000000;cursor:pointer;}
+.tool-btn:hover{background:#f8fafc;color:#000000;}
+.tool-btn.active{background:var(--brand-soft);color:#000000;border-color:color-mix(in oklch,var(--brand) 40%,transparent);}
+
+.btn-primary{display:inline-flex;align-items:center;gap:0.35rem;background:#2563eb;color:#ffffff;border:1px solid #2563eb;height:2rem;padding:0 0.875rem;border-radius:var(--radius);font-size:0.75rem;font-weight:normal;cursor:pointer;}
+.btn-primary:hover{background:#1d4ed8;}
+
+/* Status Labels Bar */
+.status-labels-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.status-label-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 9999px;
+  border: 1px solid var(--border);
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: #ffffff;
+  color: #334155;
+  user-select: none;
+}
+
+.status-label-item:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+/* Warna Kontras & Aktif */
+.status-label-item.all.active {
+  background: #0F172A; color: #FFFFFF; border-color: #0F172A;
+}
+.status-label-item.draft.active {
+  background: #EAEAEA; color: #555555; border-color: #d1d5db;
+}
+.status-label-item.waiting.active {
+  background: #D8EDFF; color: #0E62B3; border-color: #93c5fd;
+}
+.status-label-item.rejected.active {
+  background: #FAD4CE; color: #C51A00; border-color: #fca5a5;
+}
+.status-label-item.approved.active {
+  background: #D4F4DC; color: #0F7A31; border-color: #86efac;
+}
+
+/* Filter Dropdown Panel */
+.filter-panel{position:absolute;top:calc(100% + 0.4rem);right:0;width:22rem;background:var(--popover);color:#000000;border:1px solid var(--border);border-radius:var(--radius);padding:1rem;box-shadow:0 10px 25px rgb(0 0 0/.1);z-index:100;display:flex;flex-direction:column;gap:0.75rem;}
+.filter-panel.hidden{display:none !important;}
+.filter-group{display:flex;flex-direction:column;gap:0.25rem;}
+.filter-group label{font-size:0.68rem;font-weight:normal;color:#000000;text-transform:none;}
+.filter-group select, .filter-group input{height:2rem;padding:0 0.5rem;border:1px solid var(--border);border-radius:2px;background:#ffffff;font-size:0.75rem;color:#000000;outline:none;width:100%;font-weight:normal;text-transform:none;}
+.filter-group select:focus, .filter-group input:focus{border-color:var(--ring);}
+
+.filter-actions{display:flex;align-items:center;justify-content:space-between;margin-top:0.25rem;border-top:1px solid var(--border);padding-top:0.5rem;}
+.btn-text{background:none;border:none;color:#000000;font-size:0.72rem;font-weight:normal;cursor:pointer;padding:0;}
+.btn-text:hover{text-decoration:underline;}
+
+/* Table Container */
+.table-container{width:100%;flex:1;min-height:0;display:flex;flex-direction:column;overflow:visible !important;border:1px solid var(--border);border-radius:var(--radius);background:var(--card);margin-bottom:0.25rem;position:relative;z-index:1;}
+
+table{width:100%;min-width:1250px;border-collapse:collapse;text-align:left;font-size:0.68rem;table-layout:fixed;height:100%;display:flex;flex-direction:column;}
+.table-container thead{flex-shrink:0;}
+.table-container tbody{flex:1;display:flex;flex-direction:column;justify-content:flex-start;min-height:0;overflow-y:auto;}
+
+.table-container tbody tr{display:flex;height:calc((100% - 2px) / 15);min-height:0;flex-shrink:0;cursor:pointer;}
+.table-container tbody tr td{flex:1;display:flex;align-items:center;justify-content:flex-start;border:1px solid var(--border);padding:0 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:normal;color:#000000;text-transform:uppercase;}
+.table-container tbody tr.empty-row td { border: none !important; background: transparent !important; cursor:default; }
+.table-container tbody tr td.tgl-col { text-transform: none !important; }
+
+.table-container thead tr{display:flex;height:34px;flex-shrink:0;}
+.table-container thead th{flex:1;border:1px solid var(--border);}
+
+thead th{position:sticky;top:0;background:#f1f5f9;color:#000000;font-weight:600;text-transform:uppercase;font-size:0.6rem;letter-spacing:0.025em;padding:0 8px;white-space:nowrap;cursor:pointer;user-select:none;z-index:10;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;justify-content:flex-start;text-align:left;}
+thead th:hover{background:#e2e8f0;color:#000000;}
+th .sort-container{display:inline-flex;align-items:center;gap:4px;justify-content:flex-start;width:auto;}
+th span.sort-icon{display:inline-flex;align-items:center;color:#475569;margin-left:2px;}
+
+.report-table td{color:#000000;position:relative;font-weight:normal;}
+.report-table tr:nth-child(even):not(.empty-row) { background-color: #f8fafc; }
+.report-table tr:hover:not(.empty-row) { background-color: #eff6ff; }
+
+/* Uniform Badge */
+.badge{display:inline-flex;align-items:center;justify-content:center;width:130px;height:22px;border-radius:4px;font-size:0.6rem;font-weight:600;white-space:nowrap;line-height:1;border:1px solid transparent;text-transform:uppercase;text-align:center;}
+.badge.draft{background:#EAEAEA;border-color:#d1d5db;color:#555555;}
+.badge.waiting{background:#D8EDFF;border-color:#93c5fd;color:#0E62B3;}
+.badge.success{background:#D4F4DC;border-color:#86efac;color:#0F7A31;}
+.badge.danger{background:#FAD4CE;border-color:#C51A00;color:#C51A00;}
+
+.table-footer{display:flex;align-items:center;justify-content:center;padding:0.25rem;font-size:0.75rem;color:#000000;flex-shrink:0;}
+.pagination{display:flex;align-items:center;gap:0.35rem;}
+.page-btn{display:inline-flex;align-items:center;justify-content:center;min-width:1.6rem;height:1.6rem;padding:0 0.3rem;border-radius:2px;font-weight:normal;cursor:pointer;border:1px solid transparent;background:transparent;color:#000000;}
+.page-btn.active{background:#2563eb;color:#ffffff;}
+.page-btn:disabled{opacity:0.4;cursor:not-allowed;}
+
+/* Modal Overlay & Slide-Over Panel Kanan */
+.modal-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(15, 23, 42, 0.45);z-index:100;display:flex;justify-content:flex-end;}
+.modal-overlay.hidden{display:none !important;}
+
+.modal-container{background:#f8fafc;width:75vw;min-width:800px;max-width:1100px;height:100%;display:flex;flex-direction:column;box-shadow:-15px 0 30px rgba(0,0,0,0.2);overflow:hidden;color:#0f172a;border-left:1px solid #cbd5e1;transition:none !important;}
+.modal-container.expanded-sidebar { width: 100vw !important; max-width: 100vw !important; }
+
+.modal-header{padding:0.75rem 1.25rem;background:#ffffff;border-bottom:1px solid #cbd5e1;color:#0f172a;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.modal-title{font-size:0.9rem;font-weight:700;color:#0f172a;letter-spacing:0.01em;display:flex;align-items:center;gap:0.5rem;}
+
+.modal-nav-actions{display:flex;align-items:center;gap:0.5rem;}
+.nav-tab-btn{display:inline-flex;align-items:center;gap:0.35rem;height:2rem;padding:0 0.75rem;border:1px solid #cbd5e1;border-radius:var(--radius);background:#ffffff;color:#1e293b;font-size:0.72rem;font-weight:600;cursor:pointer;}
+.nav-tab-btn:hover{background:#f1f5f9;}
+.nav-tab-btn.active{background:var(--brand-soft);color:var(--brand);border-color:color-mix(in oklch,var(--brand) 40%,transparent);}
+
+.modal-body{padding:1rem 1.25rem;overflow-y:auto;flex:1;display:flex;flex-direction:row;gap:1.25rem;align-items:flex-start;transition:none !important;}
+
+/* Dua Kolom Utama (Kiri: Data Penjualan, Kanan: Manage Attachment) */
+.modal-main-content{display:flex;flex-direction:row;gap:1.25rem;flex:1;min-width:0;}
+.modal-col-left{flex:1;min-width:0;display:flex;flex-direction:column;gap:1rem;}
+.modal-col-right{flex:1;min-width:0;display:flex;flex-direction:column;gap:1rem;}
+
+/* Panel Samping Riwayat Approval Berjejer di Paling Kanan */
+.modal-right-panel{background:#ffffff;border:1px solid #cbd5e1;border-radius:0.375rem;padding:0.875rem;display:flex;flex-direction:column;gap:0.6rem;position:sticky;top:0;height:100%;min-width:320px;flex:0 0 340px;box-shadow:0 1px 3px rgb(0 0 0 / 0.05);overflow-y:auto;}
+.activity-card-header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0;padding-bottom:0.5rem;flex-shrink:0;font-size:0.8rem;font-weight:700;color:#0f172a;}
+
+.detail-section-group {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.01);
+}
+
+.section-title{font-size:0.8rem;font-weight:700;color:#1e293b;text-transform:capitalize;border-bottom:2px solid #f1f5f9;padding-bottom:0.4rem;margin-bottom:0.875rem;display:flex;align-items:center;gap:0.5rem;letter-spacing:0.01em;}
+
+/* Desain Label Kiri, Isian Kanan (Rata Kiri) */
+.form-grid-kv{display:flex;flex-direction:column;gap:0.65rem;}
+.kv-row{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;font-size:0.73rem;}
+.kv-label{font-weight:600;color:#64748b;flex:0 0 42%;text-transform:capitalize;letter-spacing:0.01em;}
+.kv-value{font-weight:600;color:#0f172a;flex:1;text-align:left;word-break:break-word;text-transform:uppercase;}
+.kv-value.normal-case{text-transform:none !important; white-space:pre-line;}
+
+.modal-footer{padding:0.875rem 1.25rem;background:#ffffff;border-top:1px solid #cbd5e1;display:flex;align-items:center;justify-content:flex-end;gap:0.75rem;flex-shrink:0;}
+
+/* Modal Konfirmasi Action Global */
+.image-ref-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15, 23, 42, 0.5);z-index:300;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px);}
+.image-ref-overlay.hidden{display:none !important;}
+
+.image-ref-card{background:#ffffff;width:520px;max-height:85vh;border-radius:0.75rem;box-shadow:0 25px 50px -12px rgb(0 0 0 / 0.25);padding:1.5rem;display:flex;flex-direction:column;gap:1.2rem;overflow:hidden;}
+.image-ref-content{display:flex;flex-direction:column;gap:0.25rem;}
+.image-ref-title{font-size:0.95rem;font-weight:700;color:#0f172a;}
+.image-ref-desc{font-size:0.75rem;color:#64748b;line-height:1.4;}
+
+.image-ref-textarea{width:100%;height:60px;padding:0.5rem 0.75rem;border:1px solid #cbd5e1;border-radius:0.375rem;font-size:0.75rem;outline:none;resize:none;color:#0f172a;background:#ffffff;font-family:inherit;}
+.image-ref-textarea:focus{border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,0.15);}
+
+.image-ref-actions{display:flex;align-items:center;justify-content:flex-end;gap:0.5rem;padding-top:0.5rem;border-top:1px solid #f1f5f9;flex-shrink:0;}
+.btn-ref-cancel{height:2rem;padding:0 0.875rem;background:#ffffff;border:1px solid #cbd5e1;border-radius:0.375rem;font-weight:600;font-size:0.75rem;color:#334155;cursor:pointer;}
+.btn-ref-cancel:hover{background:#f1f5f9;}
+.btn-ref-danger{height:2rem;padding:0 1rem;background:#dc2626;border:1px solid #dc2626;border-radius:0.375rem;font-weight:600;font-size:0.75rem;color:#ffffff;cursor:pointer;}
+.btn-ref-danger:hover{background:#b91c1c;}
+.btn-ref-success{height:2rem;padding:0 1rem;background:#16a34a;border:1px solid #16a34a;border-radius:0.375rem;font-weight:600;font-size:0.75rem;color:#ffffff;cursor:pointer;}
+.btn-ref-success:hover{background:#15803d;}
+
+svg{display:block}
+</style>
+</head>
+<body>
+<div class="app" id="appRoot">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" aria-label="Navigasi">
+    <div class="sidebar-top">
+      <span class="side-icon active" id="menuValidation" title="Validasi Penjualan">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      </span>
+    </div>
+    <div class="sidebar-bottom"></div>
+  </aside>
+
+  <!-- MAIN AREA -->
+  <main>
+    <div id="viewValidation" class="view-container active">
+      <div class="page-header">
+        <h1>Validasi Penjualan</h1>
+
+        <div class="header-bottom-row">
+          <div class="status-labels-bar" id="statusLabelsContainer"></div>
+
+          <div class="top-toolbar">
+            <div class="search-box">
+              <span class="search-icon"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+              <input type="text" id="searchInput" placeholder="Cari data..." oninput="handleSearch()">
+            </div>
+
+            <div style="position:relative;">
+              <button type="button" class="tool-btn" id="filterToggleBtn" title="Filter Data" onclick="toggleFilterPanel(event)">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+              </button>
+
+              <!-- Filter Dropdown Panel -->
+              <div id="filterPanel" class="filter-panel hidden" onclick="event.stopPropagation()">
+                <div class="filter-group">
+                  <label>Project</label>
+                  <select id="filterProject" onchange="onProjectFilterChange()">
+                    <option value="" disabled selected>Semua Project</option>
+                  </select>
+                </div>
+
+                <div class="filter-group">
+                  <label>Company</label>
+                  <select id="filterCompany" onchange="onCompanyFilterChange()">
+                    <option value="" disabled selected>Semua Company</option>
+                  </select>
+                </div>
+
+                <div class="filter-group">
+                  <label>Tanggal Confirm 2</label>
+                  <input type="text" id="filterDateRange" placeholder="Pilih tanggal..." onchange="applyFilters()" style="background:#ffffff; font-size:0.72rem;">
+                </div>
+
+                <div class="filter-actions">
+                  <button type="button" class="btn-text" onclick="resetFilters()">Reset Filter</button>
+                  <button type="button" class="btn-primary" style="height:1.75rem; font-size:0.68rem;" onclick="toggleFilterPanel(event)">Tutup</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table Container -->
+      <div class="table-container">
+        <table id="validasiTable">
+          <colgroup>
+            <col style="width: 16%;">
+            <col style="width: 14%;">
+            <col style="width: 13%;">
+            <col style="width: 10%;">
+            <col style="width: 12%;">
+            <col style="width: 16%;">
+            <col style="width: 10%;">
+            <col style="width: 9%;">
+          </colgroup>
+          <thead>
+            <tr>
+              <th onclick="sortData('company')"><div class="sort-container"><span>COMPANY</span><span class="sort-icon"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg></span></div></th>
+              <th onclick="sortData('project')"><div class="sort-container"><span>PROJECT</span><span class="sort-icon"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg></span></div></th>
+              <th onclick="sortData('rsv')"><div class="sort-container"><span>KODE RESERVASI</span><span class="sort-icon"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg></span></div></th>
+              <th onclick="sortData('unit')"><div class="sort-container"><span>KODE UNIT</span><span class="sort-icon"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg></span></div></th>
+              <th onclick="sortData('tglConfirm2Date')"><div class="sort-container"><span>TANGGAL CONFIRM 2</span><span class="sort-icon"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg></span></div></th>
+              <th onclick="sortData('customer')"><div class="sort-container"><span>NAMA KONSUMEN</span><span class="sort-icon"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg></span></div></th>
+              <th onclick="sortData('status')"><div class="sort-container"><span>STATUS</span><span class="sort-icon"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg></span></div></th>
+              <th onclick="sortData('tglApproveDate')"><div class="sort-container"><span>TANGGAL APPROVE</span><span class="sort-icon"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg></span></div></th>
+            </tr>
+          </thead>
+          <tbody id="tableBody" class="report-table"></tbody>
+        </table>
+      </div>
+
+      <div class="table-footer">
+        <div class="pagination" id="paginationContainer"></div>
+      </div>
+    </div>
+
+    <!-- Modal Detail Slide-Over -->
+    <div id="detailModal" class="modal-overlay hidden" onclick="closeModal()">
+      <div class="modal-container" id="modalContainerBox" onclick="event.stopPropagation()">
+        
+        <div class="modal-header">
+          <span class="modal-title" id="modalTitle">Detail Validasi Penjualan</span>
+          <div class="modal-nav-actions">
+            <button type="button" class="nav-tab-btn" id="btnTabApproval" onclick="toggleApprovalPanel()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>
+              <span>Riwayat approval</span>
+            </button>
+            <button type="button" onclick="closeModal()" title="Tutup Modal" style="background:#ffffff; border:1px solid #cbd5e1; border-radius:4px; width:30px; height:30px; cursor:pointer; color:#0f172a; font-weight:bold; font-size:16px; display:inline-flex; align-items:center; justify-content:center;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#ffffff'">&times;</button>
+          </div>
+        </div>
+
+        <div class="modal-body" id="modalBodyContainer">
+          <div class="modal-main-content">
+            <!-- Kolom Kiri: Data Penjualan -->
+            <div class="modal-col-left">
+              <div class="detail-section-group">
+                <div class="section-title">Data Penjualan</div>
+                <div class="form-grid-kv">
+                  <div class="kv-row"><span class="kv-label">Sales</span><span class="kv-value" id="detSales">-</span></div>
+                  <div class="kv-row"><span class="kv-label">Tanggal Confirm 1</span><span class="kv-value normal-case" id="detTglConfirm1">-</span></div>
+                  <div class="kv-row"><span class="kv-label">Cara Bayar Standar</span><span class="kv-value" id="detCaraBayarStandar">-</span></div>
+                  <div class="kv-row"><span class="kv-label">Cara Bayar Penjualan</span><span class="kv-value" id="detCaraBayarPenjualan">-</span></div>
+                  <div class="kv-row"><span class="kv-label">Harga Perdana</span><span class="kv-value" id="detHargaPerdana">-</span></div>
+                  <div class="kv-row"><span class="kv-label">Harga Jual</span><span class="kv-value" id="detHargaJual">-</span></div>
+                  <div class="kv-row"><span class="kv-label">Harga Tanpa Bunga</span><span class="kv-value" id="detHargaTanpaBunga">-</span></div>
+                  <div class="kv-row"><span class="kv-label">PPnBM</span><span class="kv-value" id="detPpnbm">-</span></div>
+                  <div class="kv-row"><span class="kv-label">PPH 22</span><span class="kv-value" id="detPph22">-</span></div>
+                  <div class="kv-row"><span class="kv-label">% NPV</span><span class="kv-value" id="detNpv">-</span></div>
+                  <div class="kv-row"><span class="kv-label">Tipe NPV</span><span class="kv-value" id="detTipeNpv">-</span></div>
+                  <div class="kv-row"><span class="kv-label">+/- Bruto</span><span class="kv-value" id="detBruto">-</span></div>
+                  <div class="kv-row"><span class="kv-label">Permintaan Konsumen</span><span class="kv-value" id="detPermintaanKonsumen">-</span></div>
+                  <div class="kv-row"><span class="kv-label">Catatan Internal</span><span class="kv-value normal-case" id="detCatatanInternal">-</span></div>
+                  <div class="kv-row"><span class="kv-label">Promo</span><span class="kv-value normal-case" id="detPromo">-</span></div>
+                  <div class="kv-row"><span class="kv-label">Budget Promo</span><span class="kv-value" id="detBudgetPromo">-</span></div>
+                  <div class="kv-row"><span class="kv-label">Komisi/Subsidi/Provisi</span><span class="kv-value" id="detKomisi">-</span></div>
+                  <div class="kv-row"><span class="kv-label">Budget Komisi/Subsidi/Provisi</span><span class="kv-value" id="detBudgetKomisi">-</span></div>
+                  <div class="kv-row"><span class="kv-label">+/- Bruto 1</span><span class="kv-value" id="detBruto1">-</span></div>
+                  <div class="kv-row"><span class="kv-label">Gift</span><span class="kv-value" id="detGift">-</span></div>
+                  <div class="kv-row"><span class="kv-label">Budget Gift</span><span class="kv-value" id="detBudgetGift">-</span></div>
+                  <div class="kv-row"><span class="kv-label">+/- Netto</span><span class="kv-value" id="detNetto">-</span></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Kolom Kanan: Manage Attachment (Dokumen) -->
+            <div class="modal-col-right">
+              <div class="detail-section-group">
+                <div class="section-title">Manage Attachment (Dokumen)</div>
+                <div id="attachmentList" style="display:flex; flex-direction:column; gap:0.75rem; font-size:0.72rem;"></div>
+              </div>
+            </div>
+          </div>
+            
+          <!-- Panel Samping Riwayat Approval -->
+          <div class="modal-right-panel hidden" id="rightPanelContainer">
+            <div class="activity-card-header">
+              <span id="rightPanelTitle">Riwayat approval</span>
+              <button type="button" onclick="closeRightPanel()" style="background:#ffffff; border:1px solid #cbd5e1; border-radius:4px; width:22px; height:22px; cursor:pointer; color:#0f172a; font-weight:bold; font-size:13px; display:inline-flex; align-items:center; justify-content:center;" title="Tutup Panel">&times;</button>
+            </div>
+            <div id="rightPanelContentBox" style="display:flex; flex-direction:column; gap:0.6rem; font-size:0.7rem; overflow-y:auto; padding-right:2px; flex:1;"></div>
+          </div>
+        </div>
+        <div class="modal-footer" id="modalFooterActions"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Modal Konfirmasi Action Global -->
+<div id="imageRefModal" class="image-ref-overlay hidden">
+  <div class="image-ref-card" style="width: 520px;">
+    <div class="image-ref-content">
+      <div class="image-ref-title" id="remarkModalTitle">Konfirmasi Approval</div>
+      <div class="image-ref-desc" id="remarkModalDesc">Masukkan catatan global untuk tindakan ini.</div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:0.25rem;">
+      <textarea id="imageRefInput" class="image-ref-textarea" placeholder="Masukkan catatan..."></textarea>
+    </div>
+    <div class="image-ref-actions">
+      <button type="button" class="btn-ref-cancel" onclick="closeImageRefModal()">Batal</button>
+      <button type="button" id="remarkSubmitBtn" class="btn-ref-success" onclick="submitImageRefModal()">Konfirmasi</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+const projectsList = [
+  { name: "GI - GOLF ISLAND", company: "PT KAPUK NAGA INDAH" },
+  { name: "GC - GOLD COAST", company: "PT MULTI ARTHA PRATAMA" },
+  { name: "BGM - BUKIT GOLF", company: "PT MULTI ARTHA PRATAMA" },
+  { name: "G8 - GOLF 8", company: "PT MULTI ARTHA PRATAMA" },
+  { name: "PIK2 - PANTAI INDAH KAPUK 2", company: "PT FIN CENTERINDO SATU" },
+  { name: "PENS - PENINSULA", company: "PT CITRA ABADI MANDIRI" },
+  { name: "GNZA - GINZA", company: "PT CITRA ABADI MANDIRI" },
+  { name: "PI2E - PIK2 EXTENSION", company: "PT BUMINDO MEKAR WIBAWA" },
+  { name: "PI3A - PANTAI INDAH KAPUK 3A", company: "PT PANORAMA EKA TUNGGAL" },
+  { name: "PI3B - PANTAI INDAH KAPUK 3B", company: "PT BINTANG ALAM MAKMUR" },
+  { name: "AM - ANCOL MANSION", company: "PT CAHAYA AGUNG MAKMUR" },
+  { name: "GSA - GREEN SEDAYU", company: "PT PANORAMA BANGUN LESTARI" },
+  { name: "SR - SENAYAN RESIDENCE", company: "PT SINJAYA" },
+  { name: "R8 - RESIDENCE 8", company: "PT BINTANG SEDAYU MAKMUR" },
+  { name: "SS - SEDAYU SQUARE", company: "PT SEDAYU SEJAHTERA ABADI" },
+  { name: "GM - GREEN MANSION", company: "PT SEKSARSARI ARYADUTA" },
+  { name: "GP - GREEN PURI", company: "PT CATUR MARGA UTAMA" }
+];
+
+const salesList = ["ANTHONY", "FENNY SOEMANTO", "JUAN DU", "HANNY SALIM", "HONGGEN HU", "JOKO PRATAMA", "SITI LESTARI", "REZA FADHILAH", "DEWI SARTIKA"];
+const sadStaffList = ["BAMBANG HERMAWAN", "PUTRI LESTARI", "RIZKY RAMADHAN", "SITI AMINAH", "FAJAR SIDIK"];
+const accStaffList = ["HENDRA WIJAYA", "DEWI LESTARI", "AHMAD FAUZI", "RINA KARTIKA", "CHANDRA KURNIAWAN"];
+
+const uniqueCustomerPool = [
+  "Budi Santoso", "Siti Aisyah", "Hendra Wijaya", "Dewi Lestari", "Ahmad Fauzi", 
+  "Rina Kartika", "Chandra Kurniawan", "Melati Sukma", "Yohanes Surya", "Jessica Mila", 
+  "Kevin Sanjaya", "Natasha Wilona", "Reza Rahadian", "Dian Sastrowardoyo", "Nicholas Saputra", 
+  "Raisa Andriana", "Afgan Syahreza", "Isyana Sarasvati", "Joe Taslim", "Iko Uwais", 
+  "Chelsea Islan", "Adhisty Zara", "Angga Yunanda", "Shenina Cinnamon", "Jefri Nichol", 
+  "Pevita Pearce", "Luna Maya", "Tora Sudiro", "Vino G. Bastian", "Marsha Timothy", 
+  "Abimana Aryasatya", "Agnes Monica", "Tulus", "Judika Sihotang", "Bunga Citra Lestari", 
+  "Rio Haryanto", "Rifat Sungkar", "Rizal Armada", "Armand Maulana", "Gading Marten", 
+  "Ariel Noah", "Anang Hermansyah", "Ashanty Siddik", "Raffi Ahmad", "Nagita Slavina", 
+  "Baim Wong", "Paula Verhoeven", "Deddy Corbuzier", "Ruben Onsu", "Andre Taulany"
+];
+
+const unitTypes = ["KIOS", "SOHO", "PHS", "APART", "RUKO"];
+const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+
+const sampleRejectNotes = [
+  "Dokumen IOM Free Alih Hak tidak sesuai dengan ketentuan promosi yang berlaku. Mohon direvisi.",
+  "Tanda tangan konsumen pada Form Pemesanan Unit kurang jelas/terpotong, mohon unggah ulang scan dokumen asli.",
+  "Lampiran Payment Schedule tidak sinkron dengan tenor cicilan pada sistem. Harap periksa kembali."
+];
+
+let seed = 12345;
+function random() {
+  let x = Math.sin(seed++) * 10000;
+  return x - Math.floor(x);
+}
+
+let validasiData = [];
+let currentDay = 24; 
+let currentMonth = 8; 
+let currentYear = 2026;
+
+for (let i = 1; i <= 50; i++) {
+  let dayJump = Math.floor(random() * 3); 
+  currentDay -= dayJump;
+  if(currentDay < 1) currentDay = 25 + Math.floor(random() * 5);
+
+  let dayStr = String(currentDay).padStart(2, '0');
+  let monthStr = monthNames[currentMonth];
+  let tglConfirm2Str = `${currentDay} ${monthStr} ${currentYear}`;
+  let tglDateObj = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${dayStr}`;
+
+  let proj = projectsList[(i - 1) % projectsList.length];
+  
+  let stat = "";
+  if (i >= 1 && i <= 3) stat = "Approved";
+  else if (i >= 4 && i <= 6) stat = "Rejected";
+  else if (i >= 7 && i <= 9) stat = "Waiting for Approval";
+  else stat = "Draft";
+
+  let salesName = salesList[(i - 1) % salesList.length];
+  let custName = uniqueCustomerPool[(i - 1) % uniqueCustomerPool.length];
+  let assignedSad = sadStaffList[(i - 1) % sadStaffList.length];
+  let assignedAcc = accStaffList[(i - 1) % accStaffList.length];
+  
+  let unitTypeCode = unitTypes[(i - 1) % unitTypes.length];
+  let unitNum = (i * 13) % 400 + 1;
+  let unitCode = `${unitTypeCode}-${String(unitNum).padStart(3, '0')}`;
+  let rsvNum = (i * 17) % 800 + 100;
+  let rsvCode = `ASG/0926/${rsvNum}`;
+
+  let baseMultiplier = 3 + (i % 5); 
+  let hargaPerdanaVal = Math.round((baseMultiplier * 1000000000 + (i * 50000000)) / 1000000) * 1000000;
+  let hargaJualVal = Math.round((hargaPerdanaVal + 250000000) / 1000000) * 1000000;
+  let hargaTanpaBungaVal = Math.round((hargaPerdanaVal + 10000000) / 1000000) * 1000000;
+
+  const fmt = (num) => num.toLocaleString('id-ID');
+  const getInitialDocName = (title) => `${title.replace(/\s+/g, '_')}_${unitCode}.PDF`;
+
+  let appHist = [];
+  let initialDocRemark = stat === "Rejected" ? "Tanda tangan konsumen kurang jelas." : "";
+  let initialDocHistory = initialDocRemark ? [{ date: "25 Sep 2026 13:10", author: assignedAcc, note: initialDocRemark }] : [];
+
+  let defaultUploaderTime = `25 Sep 2026 13:10 • by ${assignedSad}`;
+  
+  let attList = [
+    { title: "FORM PEMESANAN UNIT", name: getInitialDocName("FORM PEMESANAN UNIT"), uploaderInfo: defaultUploaderTime, history: initialDocHistory, isReuploaded: false, isStillRejected: stat === "Rejected", reviewState: stat === "Rejected" ? "cross" : null, reviewNote: stat === "Rejected" ? "Tanda tangan konsumen kurang jelas." : "" },
+    { title: "PAYMENT SCHEDULE", name: getInitialDocName("PAYMENT SCHEDULE"), uploaderInfo: defaultUploaderTime, history: [], isReuploaded: false, isStillRejected: false, reviewState: null, reviewNote: "" },
+    { title: "SURAT PERNYATAAN BANGUN KAVLING", name: getInitialDocName("SURAT PERNYATAAN BANGUN KAVLING"), uploaderInfo: defaultUploaderTime, history: [], isStillRejected: false, reviewState: null, reviewNote: "" },
+    { title: "IOM NPV MINUS", name: getInitialDocName("IOM NPV MINUS"), uploaderInfo: defaultUploaderTime, history: [], isStillRejected: false, reviewState: null, reviewNote: "" },
+    { title: "IOM FREE BIAYA AJB", name: getInitialDocName("IOM FREE BIAYA AJB"), uploaderInfo: defaultUploaderTime, history: [], isStillRejected: false, reviewState: null, reviewNote: "" },
+    { title: "IOM FREE ALIH HAK", name: getInitialDocName("IOM FREE ALIH HAK"), uploaderInfo: defaultUploaderTime, history: [], isStillRejected: false, reviewState: null, reviewNote: "" },
+    { title: "IOM FREE IPL", name: getInitialDocName("IOM FREE IPL"), uploaderInfo: defaultUploaderTime, history: [], isStillRejected: false, reviewState: null, reviewNote: "" }
+  ];
+
+  let tglApproveStr = "-";
+  let tglApproveDateObj = "";
+
+  if (stat === "Rejected") {
+    appHist.push({ status: "Rejected", time: "25 Sep 2026 13:10", actor: assignedAcc, note: sampleRejectNotes[0] });
+    appHist.push({ status: "Submit", time: "25 Sep 2026 13:00", actor: assignedSad, note: "" });
+  } else if (stat === "Approved") {
+    tglApproveStr = `26 Sep 2026`;
+    tglApproveDateObj = `2026-09-26`;
+    appHist.push({ status: "Approved", time: "26 Sep 2026 10:15", actor: assignedAcc, note: "Dokumen telah lengkap dan sesuai." });
+    appHist.push({ status: "Submit", time: "25 Sep 2026 13:00", actor: assignedSad, note: "" });
+  } else if (stat === "Waiting for Approval") {
+    appHist.push({ status: "Submit", time: "25 Sep 2026 13:00", actor: assignedSad, note: "" });
+  }
+
+  let promoStr = `PAKET PROMO UTAMA: 38.000.000\nIOM BIAYA AJB: BEBAN PERUSAHAAN\nIOM ALIH HAK: BEBAN PERUSAHAAN\nIOM IPL: BEBAN PERUSAHAAN`;
+
+  validasiData.push({
+    rsv: rsvCode,
+    tglConfirm2: tglConfirm2Str,
+    tglConfirm2Date: tglDateObj,
+    tglApprove: tglApproveStr,
+    tglApproveDate: tglApproveDateObj,
+    unit: unitCode,
+    sales: salesName,
+    customer: custName,
+    assignedSad: assignedSad,
+    assignedAcc: assignedAcc,
+    status: stat,
+    project: proj.name,
+    company: proj.company,
+    subProject: proj.name,
+    tglConfirm1: `${Math.max(1, currentDay - 3)} ${monthStr} ${currentYear}`,
+    caraBayarStandar: "36",
+    caraBayarPenjualan: "120",
+    hargaPerdana: fmt(hargaPerdanaVal),
+    hargaJual: fmt(hargaJualVal),
+    hargaTanpaBunga: fmt(hargaTanpaBungaVal),
+    ppnbm: "0",
+    pph22: "0",
+    npvVal: "7.00 - 7.00",
+    npvType: "STANDARD",
+    brutoVal: "86.711.181",
+    permintaanKonsumen: "BF 50 JT, ANGS 11 JANUARI 2025, DST.",
+    promo: promoStr,
+    budgetPromo: "38.000.000",
+    komisi: "-",
+    budgetKomisi: "0",
+    bruto1Val: "36.711.181",
+    gift: "ELECTRONIC VOUCHER: 10.000.000",
+    budgetGift: "15.000.000",
+    netto: "21.711.181",
+    catatanInternal: `BF 50 JT, ANGSURAN KALI KE-${i} SESUAI KETENTUAN.`,
+    attachments: attList,
+    approvalHistory: appHist
+  });
+}
+
+let currentPage = 1;
+const itemsPerPage = 15;
+let searchQuery = "";
+let filterProjectVal = "";
+let filterCompanyVal = "";
+let filterDateRangeVal = "";
+let currentStatusFilter = ""; 
+let activeItemIndex = null;
+let currentSortCol = "";
+let currentSortAsc = true;
+
+window.addEventListener('DOMContentLoaded', () => {
+  updateProjectDropdown("", "");
+  updateCompanyDropdown("", "");
+  renderStatusLabels();
+  renderTable();
+
+  flatpickr("#filterDateRange", {
+    mode: "range",
+    dateFormat: "Y-m-d",
+    locale: "id",
+    onChange: function(selectedDates, dateStr, instance) {
+      filterDateRangeVal = dateStr;
+      applyFilters();
+    }
+  });
+});
+
+window.addEventListener("click", () => {
+  const filterPanel = document.getElementById("filterPanel");
+  const filterBtn = document.getElementById("filterToggleBtn");
+  if(filterPanel && !filterPanel.classList.contains("hidden")) {
+    filterPanel.classList.add("hidden");
+    filterBtn.classList.remove("active");
+  }
+});
+
+function updateProjectDropdown(selectedProject, currentProjectVal) {
+  const projectSelect = document.getElementById("filterProject");
+  const uniqueProjects = [...new Set(projectsList.map(p => p.name))].sort();
+  let projHtml = '<option value="">Semua Project</option>';
+  uniqueProjects.forEach(pName => {
+    let isSelected = (pName === currentProjectVal) ? "selected" : "";
+    projHtml += `<option value="${pName}" ${isSelected}>${pName}</option>`;
+  });
+  projectSelect.innerHTML = projHtml;
+}
+
+function updateCompanyDropdown(selectedProject, currentCompanyVal) {
+  const companySelect = document.getElementById("filterCompany");
+  if (!selectedProject || selectedProject === "") {
+    companySelect.innerHTML = '<option value="">Semua Company</option><option value="" disabled style="color:#94a3b8;">Data tidak ditemukan</option>';
+    filterCompanyVal = "";
+  } else {
+    let availableCompanies = [...new Set(projectsList.filter(p => p.name === selectedProject).map(p => p.company))].sort();
+    let compHtml = '<option value="">Semua Company</option>';
+    availableCompanies.forEach(cName => {
+      let isSelected = (cName === currentCompanyVal) ? "selected" : "";
+      compHtml += `<option value="${cName}" ${isSelected}>${cName}</option>`;
+    });
+    companySelect.innerHTML = compHtml;
+  }
+}
+
+function onProjectFilterChange() {
+  const selectedProj = document.getElementById("filterProject").value;
+  filterProjectVal = selectedProj;
+  filterCompanyVal = "";
+  updateProjectDropdown(selectedProj, filterProjectVal);
+  updateCompanyDropdown(selectedProj, filterCompanyVal);
+  applyFilters();
+}
+
+function onCompanyFilterChange() {
+  filterCompanyVal = document.getElementById("filterCompany").value;
+  updateCompanyDropdown(filterProjectVal, filterCompanyVal);
+  applyFilters();
+}
+
+function toggleFilterPanel(e) {
+  e.stopPropagation();
+  const panel = document.getElementById("filterPanel");
+  const btn = document.getElementById("filterToggleBtn");
+  panel.classList.toggle("hidden");
+  if(!panel.classList.contains("hidden")) btn.classList.add("active");
+  else btn.classList.remove("active");
+}
+
+function selectStatusLabel(statusVal) {
+  currentStatusFilter = statusVal;
+  currentPage = 1;
+  renderStatusLabels();
+  renderTable();
+}
+
+function renderStatusLabels() {
+  const statuses = [
+    { label: "All", val: "", cssClass: "all" },
+    { label: "Draft", val: "Draft", cssClass: "draft" },
+    { label: "Waiting for Approval", val: "Waiting for Approval", cssClass: "waiting" },
+    { label: "Rejected", val: "Rejected", cssClass: "rejected" },
+    { label: "Approved", val: "Approved", cssClass: "approved" }
+  ];
+
+  let html = "";
+  statuses.forEach(s => {
+    let isActive = currentStatusFilter === s.val;
+    html += `
+      <div class="status-label-item ${s.cssClass} ${isActive ? 'active' : ''}" onclick="selectStatusLabel('${s.val}')">
+        <span>${s.label}</span>
+      </div>
+    `;
+  });
+  document.getElementById("statusLabelsContainer").innerHTML = html;
+}
+
+function applyFilters() {
+  filterProjectVal = document.getElementById("filterProject").value;
+  filterCompanyVal = document.getElementById("filterCompany").value;
+  filterDateRangeVal = document.getElementById("filterDateRange").value;
+  currentPage = 1;
+  renderTable();
+}
+
+function resetFilters() {
+  filterProjectVal = "";
+  filterCompanyVal = "";
+  filterDateRangeVal = "";
+  document.getElementById("filterDateRange").value = "";
+  updateProjectDropdown("", "");
+  updateCompanyDropdown("", "");
+  currentStatusFilter = "";
+  currentPage = 1;
+  renderStatusLabels();
+  renderTable();
+}
+
+function getFilteredData() {
+  let data = validasiData.filter(item => {
+    const searchStr = `${item.rsv} ${item.unit} ${item.customer} ${item.project} ${item.company} ${item.status}`.toLowerCase();
+    if(searchQuery && !searchStr.includes(searchQuery.toLowerCase())) return false;
+    if(filterProjectVal && item.project !== filterProjectVal) return false;
+    if(filterCompanyVal && item.company !== filterCompanyVal) return false;
+    if(currentStatusFilter !== "" && item.status !== currentStatusFilter) return false;
+
+    if(filterDateRangeVal) {
+      if(filterDateRangeVal.includes(" to ")) {
+        let parts = filterDateRangeVal.split(" to ");
+        let startDate = parts[0];
+        let endDate = parts[1];
+        if(item.tglConfirm2Date < startDate || item.tglConfirm2Date > endDate) return false;
+      } else {
+        let singleDate = filterDateRangeVal;
+        if(item.tglConfirm2Date !== singleDate) return false;
+      }
+    }
+
+    return true;
+  });
+
+  if(currentSortCol) {
+    data.sort((a, b) => {
+      let valA = a[currentSortCol] || "";
+      let valB = b[currentSortCol] || "";
+      if(valA < valB) return currentSortAsc ? -1 : 1;
+      if(valA > valB) return currentSortAsc ? 1 : -1;
+      return 0;
+    });
+  }
+  return data;
+}
+
+function sortData(col) {
+  if(currentSortCol === col) currentSortAsc = !currentSortAsc;
+  else { currentSortCol = col; currentSortAsc = true; }
+  renderTable();
+}
+
+function renderTable() {
+  const filtered = getFilteredData();
+  const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
+  if(currentPage > totalPages) currentPage = totalPages;
+
+  const start = (currentPage - 1) * itemsPerPage;
+  const paginated = filtered.slice(start, start + itemsPerPage);
+
+  let html = "";
+  paginated.forEach((item) => {
+    let badgeClass = "draft";
+    if(item.status === "Approved") badgeClass = "success";
+    else if(item.status === "Rejected") badgeClass = "danger";
+    else if(item.status === "Waiting for Approval") badgeClass = "waiting";
+    else if(item.status === "Draft") badgeClass = "draft";
+
+    let globalIdx = validasiData.indexOf(item);
+    let displayProject = item.project.includes(" - ") ? item.project.split(" - ").slice(1).join(" - ") : item.project;
+
+    html += `
+      <tr onclick="openDetail(${globalIdx})">
+        <td>${item.company.toLowerCase()}</td>
+        <td>${displayProject.toLowerCase()}</td>
+        <td><code style="color:#000000; font-weight:normal;">${item.rsv}</code></td>
+        <td>${item.unit}</td>
+        <td class="tgl-col">${item.tglConfirm2}</td>
+        <td>${item.customer}</td>
+        <td><span class="badge ${badgeClass}">${item.status}</span></td>
+        <td class="tgl-col">${item.tglApprove}</td>
+      </tr>
+    `;
+  });
+
+  const remaining = itemsPerPage - paginated.length;
+  for(let i=0; i<remaining; i++) {
+    html += `<tr class="empty-row"><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>`;
+  }
+  document.getElementById("tableBody").innerHTML = html;
+
+  let paginationHtml = `<button class="page-btn" onclick="goToPage(1)" ${currentPage === 1 ? 'disabled' : ''}>&laquo;</button>`;
+  for(let p=1; p<=totalPages; p++) {
+    paginationHtml += `<button class="page-btn ${p === currentPage ? 'active' : ''}" onclick="goToPage(${p})">${p}</button>`;
+  }
+  paginationHtml += `<button class="page-btn" onclick="goToPage(totalPages)" ${currentPage === totalPages ? 'disabled' : ''}>&raquo;</button>`;
+  document.getElementById("paginationContainer").innerHTML = paginationHtml;
+}
+
+function handleSearch() {
+  searchQuery = document.getElementById("searchInput").value;
+  currentPage = 1;
+  renderTable();
+}
+
+function goToPage(p) {
+  currentPage = p;
+  renderTable();
+}
+
+function openFile(fileName) {
+  if(!fileName) return;
+  window.open('about:blank', '_blank');
+}
+
+function openDetail(index) {
+  activeItemIndex = index;
+  closeRightPanel();
+  refreshModalContent(index);
+  document.getElementById("detailModal").classList.remove("hidden");
+}
+
+function simulateReupload(originalIdx) {
+  if(activeItemIndex === null) return;
+  let item = validasiData[activeItemIndex];
+  let targetAtt = item.attachments[originalIdx];
+  if(targetAtt) {
+    targetAtt.name = "revised.pdf";
+    targetAtt.isReuploaded = true; 
+    targetAtt.isStillRejected = false;
+    targetAtt.uploaderInfo = `28 Sep 2026 16:45 • by ${item.assignedSad}`;
+    refreshModalContent(activeItemIndex);
+  }
+}
+
+function setDocState(originalIdx, state) {
+  if(activeItemIndex === null) return;
+  let item = validasiData[activeItemIndex];
+  let targetAtt = item.attachments[originalIdx];
+  if(targetAtt) {
+    if(targetAtt.reviewState === state) {
+      targetAtt.reviewState = null;
+      targetAtt.reviewNote = "";
+    } else {
+      targetAtt.reviewState = state;
+      if(state === 'check') targetAtt.reviewNote = "";
+    }
+    refreshModalContent(activeItemIndex);
+  }
+}
+
+function updateDocNote(originalIdx, val) {
+  if(activeItemIndex === null) return;
+  let item = validasiData[activeItemIndex];
+  let targetAtt = item.attachments[originalIdx];
+  if(targetAtt) {
+    targetAtt.reviewNote = val;
+  }
+}
+
+function refreshModalContent(index) {
+  const item = validasiData[index];
+  document.getElementById("modalTitle").innerText = "Detail Validasi Penjualan";
+  document.getElementById("detSales").innerText = item.sales;
+  document.getElementById("detTglConfirm1").innerText = item.tglConfirm1;
+  document.getElementById("detCaraBayarStandar").innerText = item.caraBayarStandar;
+  document.getElementById("detCaraBayarPenjualan").innerText = item.caraBayarPenjualan;
+  document.getElementById("detHargaPerdana").innerText = item.hargaPerdana;
+  document.getElementById("detHargaJual").innerText = item.hargaJual;
+  document.getElementById("detHargaTanpaBunga").innerText = item.hargaTanpaBunga;
+  document.getElementById("detPpnbm").innerText = item.ppnbm;
+  document.getElementById("detPph22").innerText = item.pph22;
+  document.getElementById("detNpv").innerText = item.npvVal;
+  document.getElementById("detTipeNpv").innerText = item.npvType;
+  document.getElementById("detBruto").innerText = item.brutoVal;
+  document.getElementById("detPermintaanKonsumen").innerText = item.permintaanKonsumen;
+  document.getElementById("detCatatanInternal").innerText = item.catatanInternal;
+  document.getElementById("detPromo").innerText = item.promo;
+  document.getElementById("detBudgetPromo").innerText = item.budgetPromo;
+  document.getElementById("detKomisi").innerText = item.komisi;
+  document.getElementById("detBudgetKomisi").innerText = item.budgetKomisi;
+  document.getElementById("detBruto1").innerText = item.bruto1Val;
+  document.getElementById("detGift").innerText = item.gift;
+  document.getElementById("detBudgetGift").innerText = item.budgetGift;
+  document.getElementById("detNetto").innerText = item.netto;
+
+  let pdfIconSvg = `<svg width="18" height="22" viewBox="0 0 24 28" fill="none" style="flex-shrink:0;"><path d="M14 0H3C1.34315 0 0 1.34315 0 3V25C0 26.6569 1.34315 28 3 28H21C22.6569 28 24 26.6569 24 25V10L14 0Z" fill="#E2E8F0"/><path d="M24 10H17C15.3431 10 14 8.65685 14 7V0L24 10Z" fill="#CBD5E1"/><rect x="2" y="13" width="20" height="11" rx="2.5" fill="#EF4444"/><text x="12" y="21.5" fill="white" font-family="sans-serif" font-weight="bold" font-size="7.5" text-anchor="middle">PDF</text></svg>`;
+  let historyIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>`;
+  let uploadIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`;
+
+  let attHtml = "";
+  item.attachments.forEach((obj, originalIdx) => {
+    obj.originalIdx = originalIdx;
+    let isWaiting = item.status === "Waiting for Approval";
+    let isRejectedStatus = item.status === "Rejected";
+    
+    let hasActiveCross = obj.reviewState === 'cross';
+    let hasActiveCheck = obj.reviewState === 'check';
+    
+    let hasRealRejectHistory = obj.history && obj.history.length > 0;
+
+    let isRed = (hasRealRejectHistory && obj.isStillRejected && !obj.isReuploaded);
+    let isGreen = obj.isReuploaded && !isRed;
+
+    let borderColor = isGreen ? "#86efac" : (isRed ? "#ef4444" : "#cbd5e1");
+    let bgCardColor = isGreen ? "#f0fdf4" : (isRed ? "#fef2f2" : "#ffffff");
+
+    let stateBadge = "";
+    if (isGreen) {
+      stateBadge = `<span style="background:#dcfce7; color:#15803d; border:1px solid #bbf7d0; border-radius:4px; padding:0.1rem 0.4rem; font-size:0.58rem; font-weight:600;">Dokumen Terupdate</span>`;
+    } else if (isRed) {
+      stateBadge = `<span style="background:#fee2e2; color:#b91c1c; border:1px solid #fecaca; border-radius:4px; padding:0.1rem 0.4rem; font-size:0.58rem; font-weight:600;">Perlu Revisi</span>`;
+    }
+
+    let historyPopupContent = "";
+    let hasValidHistory = obj.history && obj.history.length > 0;
+    if (hasValidHistory) {
+      // Menerapkan layout bersih dengan header teks kecil di atas dan kotak isi catatan di bawahnya[cite: 3]
+      let itemsHist = obj.history.map(h => `
+        <div style="display:flex; flex-direction:column; gap:4px; margin-bottom:8px;">
+          <div style="font-size:0.65rem; color:#64748b; font-weight:600;">${h.date} • by ${h.author}</div>
+          <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:0.35rem; padding:0.5rem 0.65rem; font-size:0.7rem; color:#0f172a; line-height:1.4;">${h.note}</div>
+        </div>
+      `).join("");
+      historyPopupContent = `<div style="max-height:220px; overflow-y:auto; display:flex; flex-direction:column;">${itemsHist}</div>`;
+    } else {
+      historyPopupContent = `<div style="font-size:0.7rem; color:#64748b; font-style:italic; text-align:center; padding:0.6rem 0;">Belum ada catatan</div>`;
+    }
+
+    let isNeedingRevision = isRejectedStatus && hasRealRejectHistory && !obj.isReuploaded && obj.reviewState === 'cross';
+    let simulateBtnHtml = (isNeedingRevision) ? `<button type="button" onclick="event.stopPropagation(); simulateReupload(${obj.originalIdx})" style="background:#ffffff; border:1px solid #2563eb; border-radius:4px; padding:0 0.4rem; height:22px; display:inline-flex; align-items:center; gap:3px; cursor:pointer; color:#2563eb; font-size:0.58rem; font-weight:600;">${uploadIconSvg}<span>Upload Ulang</span></button>` : '';
+
+    let reviewActionsHtml = '';
+    if (isWaiting) {
+      let crossBg = hasActiveCross ? '#dc2626' : '#ffffff';
+      let crossColor = hasActiveCross ? '#ffffff' : '#dc2626';
+      let crossBorder = '#dc2626';
+
+      let checkBg = hasActiveCheck ? '#16a34a' : '#ffffff';
+      let checkColor = hasActiveCheck ? '#ffffff' : '#16a34a';
+      let checkBorder = '#16a34a';
+
+      reviewActionsHtml = `
+        <div style="display:flex; align-items:center; gap:0.35rem;">
+          <button type="button" onclick="setDocState(${obj.originalIdx}, 'cross')" title="Tandai Perlu Revisi" style="width:26px; height:26px; border-radius:4px; border:1px solid ${crossBorder}; background:${crossBg}; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; font-weight:bold; font-size:13px; color:${crossColor};">✕</button>
+          <button type="button" onclick="setDocState(${obj.originalIdx}, 'check')" title="Tandai Sudah Sesuai" style="width:26px; height:26px; border-radius:4px; border:1px solid ${checkBorder}; background:${checkBg}; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; font-weight:bold; font-size:13px; color:${checkColor};">✓</button>
+        </div>
+      `;
+    }
+
+    let inlineNoteBoxHtml = '';
+    if (hasActiveCross && isWaiting) {
+      inlineNoteBoxHtml = `
+        <div style="margin-top:0.35rem;">
+          <textarea placeholder="Tuliskan catatan perbaikan dokumen..." oninput="updateDocNote(${obj.originalIdx}, this.value)" style="width:100%; height:32px; padding:0.25rem 0.6rem; border:1px solid #cbd5e1; border-radius:0.25rem; font-size:0.7rem; color:#0f172a; background:#ffffff; outline:none; resize:none; font-family:inherit; line-height:1.2;">${obj.reviewNote || ''}</textarea>
+        </div>
+      `;
+    } else if (isRed && hasRealRejectHistory) {
+      let latestNote = obj.history[0].note;
+      inlineNoteBoxHtml = `
+        <div style="margin-top:0.35rem; background:#ffffff; border:1px solid #fca5a5; border-radius:0.25rem; padding:0.4rem 0.6rem; font-size:0.7rem; color:#b91c1c; font-weight:500;">
+          ${latestNote}
+        </div>
+      `;
+    } else if (isGreen && hasRealRejectHistory) {
+      let latestNote = obj.history[0].note;
+      inlineNoteBoxHtml = `
+        <div style="margin-top:0.35rem; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:0.25rem; padding:0.4rem 0.6rem; font-size:0.7rem; color:#15803d; font-weight:500;">
+          ${latestNote}
+        </div>
+      `;
+    }
+
+    attHtml += `
+      <div style="display:flex; flex-direction:column; gap:0.35rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <label style="font-size:0.62rem; font-weight:700; color:#475569; text-transform:uppercase;">${obj.title}</label>
+          ${simulateBtnHtml}
+        </div>
+        ${obj.name ? `
+          <div style="display:flex; flex-direction:column; padding:0.5rem 0.75rem; background:${bgCardColor}; border:1px solid${borderColor}; border-radius:0.375rem; gap:0.35rem; box-shadow:0 1px 2px rgb(0 0 0 / 0.02);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="display:flex; align-items:center; gap:0.5rem; font-weight:600; color:#1e293b; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:50%;">
+                ${pdfIconSvg} 
+                <span style="overflow:hidden; text-overflow:ellipsis;">${obj.name}</span>
+              </span>
+              <div style="display:flex; align-items:center; gap:0.5rem; position:relative;">
+                ${stateBadge}${reviewActionsHtml}
+                <div style="width:1px; height:18px; background:#cbd5e1; margin:0 0.1rem;"></div>
+                <div style="display:flex; align-items:center; gap:0.35rem;">
+                  <button type="button" onclick="event.stopPropagation(); toggleDocHistoryPopup(${obj.originalIdx})" style="background:#ffffff; border:1px solid #cbd5e1; border-radius:4px; width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; color:#2563eb;" title="Riwayat Catatan">${historyIconSvg}</button>
+                  <button type="button" onclick="openFile('${obj.name}')" style="background:#ffffff; border:1px solid #cbd5e1; border-radius:4px; width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; color:#2563eb;" title="Lihat Dokumen"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                </div>
+                <div id="docHistPopup_${obj.originalIdx}" class="hidden" style="position:absolute; top:calc(100% + 6px); right:0; width:360px; background:#ffffff; border:1px solid #cbd5e1; border-radius:0.5rem; padding:0.75rem; box-shadow:0 15px 30px -5px rgb(0 0 0 / 0.15); z-index:50; display:flex; flex-direction:column; gap:0.5rem;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:0.4rem; margin-bottom:0.2rem;">
+                    <span style="font-size:0.7rem; font-weight:700; color:#0f172a; text-transform:uppercase;">Catatan Dokumen</span>
+                    <button type="button" onclick="toggleDocHistoryPopup(${obj.originalIdx})" style="background:none; border:none; font-size:14px; font-weight:bold; cursor:pointer; color:#64748b; padding:0 4px;">&times;</button>
+                  </div>
+                  ${historyPopupContent}
+                </div>
+              </div>
+            </div>
+            <div style="font-size:0.58rem; color:#64748b; font-weight:500; margin-left:26px;">
+              <span>${obj.uploaderInfo}</span>
+            </div>
+            ${inlineNoteBoxHtml}
+          </div>
+        ` : `<div style="display:flex; align-items:center; justify-content:center; padding:0.3rem 0.5rem; background:#f8fafc; border:1px solid #cbd5e1; border-radius:0.25rem; height:3rem; color:#94a3b8; font-size:0.68rem; font-style:italic;">Belum diunggah</div>`}
+      </div>
+    `;
+  });
+  document.getElementById("attachmentList").innerHTML = attHtml;
+
+  const footerActions = document.getElementById("modalFooterActions");
+  if(item.status === "Approved") {
+    footerActions.classList.add("hidden");
+  } else if(item.status === "Rejected") {
+    footerActions.classList.remove("hidden");
+    footerActions.innerHTML = `<button class="btn-primary" style="background:#2563eb; border-color:#2563eb; border-radius:0.25rem; height:2rem; padding:0 1.25rem;" onclick="handleSubmitRevisi()">Submit</button>`;
+  } else if(item.status === "Draft") {
+    footerActions.classList.remove("hidden");
+    footerActions.innerHTML = `<button class="btn-primary" style="background:#2563eb; border-color:#2563eb; border-radius:0.25rem; height:2rem; padding:0 1.25rem;" onclick="handleSubmitDraft()">Submit</button>`;
+  } else {
+    let allMarked = item.attachments.every(a => a.reviewState === 'check' || a.reviewState === 'cross');
+    let hasAnyCross = item.attachments.some(a => a.reviewState === 'cross');
+
+    footerActions.classList.remove("hidden");
+    if (allMarked) {
+      if (hasAnyCross) {
+        footerActions.innerHTML = `<button class="btn-primary" style="background:#dc2626; border-color:#dc2626; border-radius:0.25rem; height:2rem; padding:0 1.25rem;" onclick="handleAction('Rejected')">Reject</button>`;
+      } else {
+        footerActions.innerHTML = `<button class="btn-primary" style="background:#16a34a; border-color:#16a34a; border-radius:0.25rem; height:2rem; padding:0 1.25rem;" onclick="handleAction('Approved')">Approve</button>`;
+      }
+    } else {
+      footerActions.innerHTML = "";
+    }
+  }
+}
+
+function toggleDocHistoryPopup(originalIdx) {
+  const popup = document.getElementById(`docHistPopup_${originalIdx}`);
+  if(popup) popup.classList.toggle("hidden");
+}
+
+function toggleApprovalPanel() {
+  if(activeItemIndex === null) return;
+  const modalBox = document.getElementById("modalContainerBox");
+  const rightPanel = document.getElementById("rightPanelContainer");
+  const btnApproval = document.getElementById("btnTabApproval");
+  
+  if(rightPanel.classList.contains("hidden")) {
+    renderApprovalPanelContent();
+    modalBox.classList.add("expanded-sidebar");
+    rightPanel.classList.remove("hidden");
+    btnApproval.classList.add("active");
+  } else closeRightPanel();
+}
+
+function renderApprovalPanelContent() {
+  if(activeItemIndex === null) return;
+  const item = validasiData[activeItemIndex];
+  const contentBox = document.getElementById("rightPanelContentBox");
+  let approvalHistHtml = "";
+  if (!item.approvalHistory || item.approvalHistory.length === 0) {
+    approvalHistHtml = `<div style="color:#64748b; font-size:0.7rem; text-align:center; padding:1.5rem 0;">Belum ada riwayat approval.</div>`;
+  } else {
+    item.approvalHistory.exportsEach = item.approvalHistory.forEach((ah) => {
+      let isRejected = ah.status.toLowerCase().includes("rejected");
+      let isApproved = ah.status.toLowerCase().includes("approved");
+      let isSubmit = ah.status.toLowerCase().includes("submit");
+      let iconBg = isRejected ? "#ef4444" : (isApproved ? "#22c55e" : (isSubmit ? "#3b82f6" : "#f59e0b"));
+      let iconSymbol = isApproved ? "✓" : (isRejected ? "✕" : (isSubmit ? "↑" : "⏱"));
+      
+      let notesSection = (ah.note && ah.note.trim() !== "") ? `<div style="margin-top:0.35rem; background:#f8fafc; border:1px solid #e2e8f0; border-radius:0.375rem; padding:0.45rem 0.65rem; color:#0f172a; font-size:0.7rem;">${ah.note}</div>` : '';
+      
+      approvalHistHtml += `<div style="display:flex; gap:0.75rem; align-items:flex-start; padding-bottom:0.75rem; border-bottom:1px solid #f1f5f9; margin-bottom:0.25rem;"><div style="width:24px; height:24px; border-radius:50%; background:${iconBg}; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#ffffff; font-size:10px; font-weight:bold;">${iconSymbol}</div><div style="flex:1; display:flex; flex-direction:column; gap:0.2rem;"><div style="font-weight:700; color:#0f172a; font-size:0.75rem;">${ah.status}</div><div style="color:#64748b; font-size:0.65rem;">${ah.time} • by ${ah.actor}</div>${notesSection}</div></div>`;
+    });
+  }
+  contentBox.innerHTML = approvalHistHtml;
+}
+
+// Perbaikan kecil pada loop forEach approval history agar aman tanpa property 'exportsEach'
+function renderApprovalPanelContent() {
+  if(activeItemIndex === null) return;
+  const item = validasiData[activeItemIndex];
+  const contentBox = document.getElementById("rightPanelContentBox");
+  let approvalHistHtml = "";
+  if (!item.approvalHistory || item.approvalHistory.length === 0) {
+    approvalHistHtml = `<div style="color:#64748b; font-size:0.7rem; text-align:center; padding:1.5rem 0;">Belum ada riwayat approval.</div>`;
+  } else {
+    item.approvalHistory.forEach((ah) => {
+      let isRejected = ah.status.toLowerCase().includes("rejected");
+      let isApproved = ah.status.toLowerCase().includes("approved");
+      let isSubmit = ah.status.toLowerCase().includes("submit");
+      let iconBg = isRejected ? "#ef4444" : (isApproved ? "#22c55e" : (isSubmit ? "#3b82f6" : "#f59e0b"));
+      let iconSymbol = isApproved ? "✓" : (isRejected ? "✕" : (isSubmit ? "↑" : "⏱"));
+      
+      let notesSection = (ah.note && ah.note.trim() !== "") ? `<div style="margin-top:0.35rem; background:#f8fafc; border:1px solid #e2e8f0; border-radius:0.375rem; padding:0.45rem 0.65rem; color:#0f172a; font-size:0.7rem;">${ah.note}</div>` : '';
+      
+      approvalHistHtml += `<div style="display:flex; gap:0.75rem; align-items:flex-start; padding-bottom:0.75rem; border-bottom:1px solid #f1f5f9; margin-bottom:0.25rem;"><div style="width:24px; height:24px; border-radius:50%; background:${iconBg}; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#ffffff; font-size:10px; font-weight:bold;">${iconSymbol}</div><div style="flex:1; display:flex; flex-direction:column; gap:0.2rem;"><div style="font-weight:700; color:#0f172a; font-size:0.75rem;">${ah.status}</div><div style="color:#64748b; font-size:0.65rem;">${ah.time} • by ${ah.actor}</div>${notesSection}</div></div>`;
+    });
+  }
+  contentBox.innerHTML = approvalHistHtml;
+}
+
+function closeRightPanel() {
+  const modalBox = document.getElementById("modalContainerBox");
+  const rightPanel = document.getElementById("rightPanelContainer");
+  const btnApproval = document.getElementById("btnTabApproval");
+  modalBox.classList.remove("expanded-sidebar");
+  rightPanel.classList.add("hidden");
+  if(btnApproval) btnApproval.classList.remove("active");
+}
+
+function handleSubmitRevisi() {
+  if(activeItemIndex !== null) {
+    let item = validasiData[activeItemIndex];
+    item.status = "Waiting for Approval";
+    item.attachments.forEach(att => {
+      att.reviewState = null;
+      att.reviewNote = "";
+    });
+    item.approvalHistory.unshift({ status: "Submit", time: "28 Sep 2026 16:45", actor: item.assignedSad, note: "" });
+    closeModal();
+    renderStatusLabels();
+    renderTable();
+  }
+}
+
+function handleSubmitDraft() {
+  if(activeItemIndex !== null) {
+    let item = validasiData[activeItemIndex];
+    item.status = "Waiting for Approval";
+    item.attachments.forEach(att => {
+      att.isReuploaded = false;
+      att.isStillRejected = false;
+      att.reviewState = null;
+      att.reviewNote = "";
+    });
+    item.approvalHistory.unshift({ status: "Submit", time: "28 Sep 2026 16:45", actor: item.assignedSad, note: "" });
+    closeModal();
+    renderStatusLabels();
+    renderTable();
+  }
+}
+
+function closeModal() {
+  document.getElementById("detailModal").classList.add("hidden");
+  closeRightPanel();
+}
+
+let pendingActionStatus = "";
+function handleAction(statusType) {
+  pendingActionStatus = statusType;
+  const titleEl = document.getElementById("remarkModalTitle");
+  const descEl = document.getElementById("remarkModalDesc");
+  const submitBtn = document.getElementById("remarkSubmitBtn");
+  const inputEl = document.getElementById("imageRefInput");
+  inputEl.value = "";
+
+  if (statusType === "Rejected") {
+    titleEl.innerText = "Konfirmasi Penolakan Dokumen";
+    descEl.innerText = "Berikan catatan penolakan untuk melengkapi catatan perbaikan dokumen.";
+    inputEl.placeholder = "Masukkan catatan...";
+    submitBtn.className = "btn-ref-danger";
+  } else {
+    titleEl.innerText = "Konfirmasi Persetujuan";
+    descEl.innerText = "Masukkan catatan persetujuan jika diperlukan.";
+    inputEl.placeholder = "Masukkan catatan...";
+    submitBtn.className = "btn-ref-success";
+  }
+  document.getElementById("imageRefModal").classList.remove("hidden");
+}
+
+function closeImageRefModal() {
+  document.getElementById("imageRefModal").classList.add("hidden");
+  pendingActionStatus = "";
+}
+
+function submitImageRefModal() {
+  const noteVal = document.getElementById("imageRefInput").value.trim();
+  if (pendingActionStatus === "Rejected" && !noteVal) { alert("Catatan penolakan wajib diisi!"); return; }
+  document.getElementById("imageRefModal").classList.add("hidden");
+
+  if (activeItemIndex !== null && pendingActionStatus) {
+    let item = validasiData[activeItemIndex];
+    item.status = pendingActionStatus;
+    
+    if (pendingActionStatus === "Rejected") {
+      item.attachments.forEach((att) => {
+        if(att.reviewState === 'cross') {
+          let customNote = att.reviewNote && att.reviewNote.trim() ? att.reviewNote.trim() : noteVal;
+          if(!att.history) att.history = [];
+          if(customNote) {
+            att.history.unshift({ date: "28 Sep 2026 17:15", author: item.assignedAcc, note: customNote });
+          }
+          att.isReuploaded = false;
+          att.isStillRejected = true;
+        } else if(att.reviewState === 'check') {
+          att.isReuploaded = false;
+          att.isStillRejected = false;
+          att.reviewState = null;
+          att.reviewNote = "";
+        } else {
+          att.reviewState = null;
+          att.reviewNote = "";
+        }
+      });
+    } else if (pendingActionStatus === "Approved") {
+      item.tglApprove = "28 Sep 2026";
+      item.tglApproveDate = "2026-09-28";
+      item.attachments.forEach(att => {
+        att.reviewState = null;
+        att.reviewNote = "";
+        att.isReuploaded = false;
+        att.isStillRejected = false;
+      });
+    }
+    
+    item.approvalHistory.unshift({ status: pendingActionStatus, time: "28 Sep 2026 17:15", actor: item.assignedAcc, note: noteVal });
+    closeModal();
+    renderStatusLabels();
+    renderTable();
+  }
+  pendingActionStatus = "";
+}
+</script>
+</body>
+</html>
